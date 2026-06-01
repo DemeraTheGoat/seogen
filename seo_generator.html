@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Generator — Ювелирные украшения</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060d1a; --surface: #0f172a; --border: #1e293b;
+    --text: #e2e8f0; --text-sub: #94a3b8; --text-muted: #64748b; --text-dim: #334155;
+    --accent: #0ea5e9; --accent-l: #38bdf8;
+    --accent-bg: rgba(56,189,248,0.08); --accent-border: rgba(56,189,248,0.2);
+    --error-bg: rgba(239,68,68,0.08); --error-border: rgba(239,68,68,0.3); --error-text: #fca5a5;
+  }
+  .light {
+    --bg: #f5f0e8; --surface: #ede8de; --border: #c8bfad;
+    --text: #1a2744; --text-sub: #2d3f6b; --text-muted: #4a5a7a; --text-dim: #8a95aa;
+    --accent: #1a4fa0; --accent-l: #2563eb;
+    --accent-bg: rgba(26,79,160,0.07); --accent-border: rgba(26,79,160,0.25);
+    --error-bg: rgba(185,28,28,0.06); --error-border: rgba(185,28,28,0.3); --error-text: #991b1b;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; transition: background .25s, color .25s; }
+
+  /* HEADER */
+  .header { border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; gap: 12px; background: rgba(15,23,42,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+  .light .header { background: rgba(237,232,222,0.92); }
+  .logo { width: 32px; height: 32px; background: linear-gradient(135deg, #38bdf8, #6366f1); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; flex-shrink: 0; }
+  .logo-text h1 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
+  .logo-text p { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 1px; }
+
+  .platforms { display: flex; gap: 5px; margin-left: 16px; }
+  .plat-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 11px; font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: all .15s; }
+  .plat-btn.active { background: var(--accent-bg); border-color: var(--accent-l); color: var(--accent-l); }
+
+  .tabs { display: flex; gap: 3px; background: var(--surface); border-radius: 8px; padding: 3px; border: 1px solid var(--border); margin-left: 16px; }
+  .tab-btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: var(--text-muted); font-size: 12px; font-family: 'IBM Plex Mono', monospace; transition: all .15s; }
+  .tab-btn.active { background: var(--border); color: var(--text); font-weight: 600; }
+
+  .theme-btn { margin-left: auto; display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text-sub); padding: 6px 11px; font-size: 12px; font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: all .15s; }
+  .theme-btn:hover { opacity: .75; }
+
+  /* MAIN */
+  .main { max-width: 1180px; margin: 0 auto; padding: 32px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+
+  /* FORM */
+  .section-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .section-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+  .field label .opt { text-transform: none; letter-spacing: 0; font-style: italic; opacity: .7; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 11px 14px;
+    font-size: 14px; font-family: 'IBM Plex Sans', sans-serif;
+    transition: border-color .15s, box-shadow .15s; outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent-l); box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+  .field textarea { resize: vertical; line-height: 1.6; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* SLIDER */
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--accent-l); cursor: pointer; }
+  .slider-val { min-width: 76px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent-l); font-weight: 600; }
+  .slider-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+
+  /* BUTTON */
+  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; letter-spacing: .02em; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  /* ERROR */
+  .error-box { background: var(--error-bg); border: 1px solid var(--error-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: var(--error-text); }
+
+  /* EMPTY STATE */
+  .empty-state { background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 48px 32px; text-align: center; }
+  .empty-icon { font-size: 44px; opacity: .25; margin-bottom: 14px; }
+  .empty-title { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--text-muted); margin-bottom: 8px; }
+  .empty-sub { font-size: 13px; color: var(--text-dim); }
+
+  /* LOADING */
+  .loading-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 48px 32px; text-align: center; }
+  .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent-l); margin-top: 14px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent-l); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CARD */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 14px; animation: fadeUp .4s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .card-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 14px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+
+  /* METRICS */
+  .metric { margin-bottom: 10px; }
+  .metric-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .metric-label { font-size: 12px; color: var(--text-sub); font-family: 'IBM Plex Mono', monospace; }
+  .metric-val { font-size: 12px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .metric-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .metric-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+  /* DESCRIPTION */
+  .desc-text { font-size: 13.5px; line-height: 1.75; color: var(--text-sub); white-space: pre-wrap; }
+  .desc-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  /* COPY BTN */
+  .copy-btn { background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 6px; color: var(--accent-l); padding: 5px 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; transition: all .15s; }
+  .copy-btn:hover { opacity: .8; }
+  .copy-btn.copied { color: #34d399; border-color: rgba(52,211,153,0.3); }
+
+  /* TAGS */
+  .tag { display: inline-block; background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 4px; padding: 3px 8px; font-size: 12px; color: var(--accent-l); font-family: 'IBM Plex Mono', monospace; margin: 3px 3px 3px 0; }
+  .meta-box { font-size: 13px; color: var(--text-sub); line-height: 1.6; background: var(--bg); border-radius: 6px; padding: 10px 12px; }
+  .meta-label { font-size: 11px; color: var(--text-muted); margin-bottom: 7px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* KEYWORDS TAB */
+  .kw-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 10px 0 4px; }
+  .progress-fill { height: 100%; background: var(--accent-l); border-radius: 3px; transition: width .4s ease; }
+  .progress-pct { font-size: 11px; color: var(--accent-l); font-family: 'IBM Plex Mono', monospace; text-align: right; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .status-item { display: flex; align-items: center; gap: 7px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; margin-top: 5px; }
+
+  .kw-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .kw-count { font-size: 13px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .kw-count strong { color: var(--text); }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
+  .badge-real { background: rgba(52,211,153,0.1); color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+  .badge-ai { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+
+  .cluster-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .cluster-label span { opacity: .5; }
+  .kw-cluster { margin-bottom: 16px; }
+
+  .kw-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 7px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); transition: all .15s; margin-bottom: 4px; }
+  .kw-row:hover { border-color: var(--accent-border); }
+  .kw-row.checked { background: var(--accent-bg); border-color: var(--accent-border); }
+  .kw-checkbox { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--border); background: transparent; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .kw-row.checked .kw-checkbox { background: var(--accent-l); border-color: var(--accent-l); }
+  .kw-word { flex: 1; font-size: 13px; color: var(--text); }
+  .freq-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+  .freq-h { background: rgba(52,211,153,0.1); color: #34d399; }
+  .freq-m { background: var(--accent-bg); color: var(--accent-l); }
+  .freq-l { background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .source-label { font-size: 10px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .btn-sm { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 11px; font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: all .15s; }
+  .btn-sm:hover { border-color: var(--accent-border); color: var(--accent-l); }
+  .btn-copy-sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-copy-sel:hover { filter: brightness(1.15); color: #fff; }
+  .btn-copy-sel:disabled { background: var(--border); border-color: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  /* FOOTER */
+  .footer { border-top: 1px solid var(--border); padding: 12px 32px; text-align: center; font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-top: 32px; }
+
+  /* HIDDEN */
+  .hidden { display: none !important; }
+
+  @media (max-width: 800px) {
+    .grid, .kw-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    .header { padding: 12px 16px; }
+    .platforms, .tabs { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">✦</div>
+  <div class="logo-text">
+    <h1>SEO Generator</h1>
+    <p>ИИ-генерация описаний для ювелирных украшений</p>
+  </div>
+
+  <div class="platforms" id="platforms">
+    <button class="plat-btn active" onclick="setPlatform('Wildberries', this)">Wildberries</button>
+    <button class="plat-btn" onclick="setPlatform('Ozon', this)">Ozon</button>
+    <button class="plat-btn" onclick="setPlatform('Яндекс.Маркет', this)">Яндекс.Маркет</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('gen', this)">✦ Генератор</button>
+    <button class="tab-btn" onclick="switchTab('kw', this)">⚙ Ключевые слова</button>
+  </div>
+
+  <button class="theme-btn" onclick="toggleTheme()">☀ Светлая</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- TAB: GENERATOR                                        -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="main" id="tab-gen">
+  <div class="grid">
+    <!-- LEFT: form -->
+    <div>
+      <div class="section-title">Данные о товаре</div>
+      <div class="section-sub">Заполните характеристики — Yandex GPT напишет уникальный SEO-текст</div>
+
+      <div class="field">
+        <label>Название товара *</label>
+        <input id="g-name" type="text" placeholder="Кольцо золотое с бриллиантом 585 пробы">
+      </div>
+
+      <div class="field">
+        <label>Категория</label>
+        <select id="g-category">
+          <option>Кольца</option><option>Серьги</option><option>Браслеты</option>
+          <option>Подвески и шармы</option><option>Комплекты</option>
+          <option>Колье, цепи, шнурки</option><option>Броши</option>
+          <option>Пирсинг</option><option>Часы</option>
+          <option>Зажимы, запонки, ремни</option><option>Чётки</option>
+          <option>Сувениры и столовое серебро</option><option>Украшения из золота</option>
+          <option>Украшения из серебра</option><option>Украшения из керамики</option>
+          <option>Религиозные украшения</option><option>Аксессуары для украшений</option>
+        </select>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Материал</label>
+          <select id="g-material" onchange="onMaterialChange()">
+            <option value="">— выберите —</option>
+            <option value="Золото">Золото</option>
+            <option value="Серебро">Серебро</option>
+            <option value="Платина">Платина</option>
+            <option value="Титан">Титан</option>
+            <option value="Медь">Медь</option>
+            <option value="Бронза">Бронза</option>
+            <option value="Сталь">Нержавеющая сталь</option>
+          </select>
+        </div>
+        <div class="field" id="field-probe">
+          <label>Проба</label>
+          <select id="g-probe">
+            <option value="">— сначала выберите металл —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Покрытие <span class="opt">(необязательно)</span></label>
+          <select id="g-coating">
+            <option value="">— без покрытия —</option>
+            <option value="Родирование">Родирование</option>
+            <option value="Позолота">Позолота</option>
+            <option value="Чернение">Чернение</option>
+            <option value="Золочение">Золочение</option>
+            <option value="Серебрение">Серебрение</option>
+            <option value="Рутений">Покрытие рутением</option>
+            <option value="PVD">PVD-покрытие</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Цвет металла</label>
+          <select id="g-color">
+            <option value="">— выберите —</option>
+            <option value="Жёлтый">Жёлтый</option>
+            <option value="Белый">Белый</option>
+            <option value="Розовый">Розовый (красный)</option>
+            <option value="Комбинированный">Комбинированный</option>
+            <option value="Чёрный">Чёрный</option>
+            <option value="Серебристый">Серебристый</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Вставка <span class="opt">(необязательно)</span></label>
+        <select id="g-insert" onchange="onInsertChange()">
+          <option value="">— без вставки —</option>
+          <optgroup label="Драгоценные камни">
+            <option value="Бриллиант">Бриллиант</option>
+            <option value="Сапфир">Сапфир</option>
+            <option value="Рубин">Рубин</option>
+            <option value="Изумруд">Изумруд</option>
+            <option value="Александрит">Александрит</option>
+            <option value="Жемчуг">Жемчуг</option>
+          </optgroup>
+          <optgroup label="Полудрагоценные">
+            <option value="Аметист">Аметист</option>
+            <option value="Топаз">Топаз</option>
+            <option value="Цитрин">Цитрин</option>
+            <option value="Гранат">Гранат</option>
+            <option value="Перидот">Перидот</option>
+            <option value="Опал">Опал</option>
+            <option value="Турмалин">Турмалин</option>
+            <option value="Аквамарин">Аквамарин</option>
+          </optgroup>
+          <optgroup label="Синтетические / Другие">
+            <option value="Фианит">Фианит (CZ)</option>
+            <option value="Муассанит">Муассанит</option>
+            <option value="Шпинель синтетическая">Синтетическая шпинель</option>
+            <option value="Эмаль">Эмаль</option>
+            <option value="Без вставки">Без вставки (гладкое)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field hidden" id="field-insert-detail">
+        <label>Характеристики вставки</label>
+        <div class="row2">
+          <input id="g-insert-weight" type="text" placeholder="Вес: 0.12 карат">
+          <input id="g-insert-cut" type="text" placeholder="Огранка: круглая">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Особенности и преимущества</label>
+        <textarea id="g-features" rows="2" placeholder="Сертификат GIA, гипоаллергенно, застёжка-карабин..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Ключевые слова SEO</label>
+        <input id="g-keywords" type="text" placeholder="кольцо с бриллиантом, золотое кольцо купить">
+      </div>
+
+      <div class="field">
+        <label>Пример описания конкурента <span class="opt">(необязательно)</span></label>
+        <textarea id="g-example" rows="4" placeholder="Вставьте описание с карточки конкурента — ИИ возьмёт его как ориентир по стилю, но напишет уникальный текст"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Объём описания</label>
+        <div class="slider-row">
+          <input type="range" id="g-chars" min="300" max="2000" step="50" value="700" oninput="document.getElementById('g-chars-val').textContent = this.value + ' симв.'">
+          <div class="slider-val" id="g-chars-val">700 симв.</div>
+        </div>
+        <div class="slider-labels"><span>300</span><span>2000</span></div>
+      </div>
+
+      <div class="error-box hidden" id="g-error"></div>
+
+      <button class="btn-primary" id="g-btn" onclick="generate()">✦ Сгенерировать SEO-описание</button>
+    </div>
+
+    <!-- RIGHT: result -->
+    <div id="g-result-area">
+      <div class="empty-state">
+        <div class="empty-icon">✦</div>
+        <div class="empty-title">Результат появится здесь</div>
+        <div class="empty-sub">Заполните данные о товаре и нажмите «Сгенерировать»</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- TAB: KEYWORDS                                         -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="main hidden" id="tab-kw">
+  <div class="section-title">Ключевые слова по артикулам</div>
+  <div class="section-sub" style="margin-bottom:22px">Введите артикулы WB (до 30 штук) — Yandex GPT соберёт и кластеризует ключевые слова</div>
+
+  <div class="kw-grid">
+    <!-- left -->
+    <div>
+      <div class="field">
+        <label>Артикулы Wildberries</label>
+        <textarea id="kw-arts" rows="10" placeholder="123456789&#10;987654321&#10;456789123&#10;&#10;По одному на строку,&#10;или через запятую&#10;&#10;Максимум 30 артикулов"></textarea>
+        <div style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:5px" id="kw-arts-count">0/30 артикулов</div>
+      </div>
+
+      <div class="error-box hidden" id="kw-error"></div>
+
+      <button class="btn-primary" id="kw-btn" onclick="analyzeKeywords()">⚙ Собрать ключевые слова</button>
+
+      <div id="kw-progress-box" class="card hidden" style="margin-top:14px">
+        <div style="font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace" id="kw-progress-label">Анализируем…</div>
+        <div class="progress-bar"><div class="progress-fill" id="kw-progress-fill" style="width:0%"></div></div>
+        <div class="progress-pct" id="kw-progress-pct">0%</div>
+        <div id="kw-statuses"></div>
+      </div>
+    </div>
+
+    <!-- right -->
+    <div id="kw-result-area">
+      <div class="empty-state">
+        <div class="empty-icon">⚙</div>
+        <div class="empty-title">Результаты появятся здесь</div>
+        <div class="empty-sub">Введите артикулы и запустите анализ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">ИИ-система генерации SEO-описаний · Митрясов Д.С. · НГИЭУ · 2026</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// ── Probes by material ────────────────────────────────
+const PROBES = {
+  'Золото':   ['585 (14K)', '750 (18K)', '375 (9K)', '999 (24K)', '583 (14K советская)'],
+  'Серебро':  ['925', '999', '875', '830'],
+  'Платина':  ['950', '900', '850'],
+  'Титан':    ['Grade 1', 'Grade 2', 'Grade 5 (Ti-6Al-4V)'],
+  'Медь':     ['Техническая', 'М1', 'М2'],
+  'Бронза':   ['Художественная', 'БрАЖ', 'БрОФ'],
+  'Сталь':    ['316L', '304', '430'],
+};
+
+function onMaterialChange() {
+  const mat = document.getElementById('g-material').value;
+  const sel = document.getElementById('g-probe');
+  sel.innerHTML = '<option value="">— не указана —</option>';
+  if (mat && PROBES[mat]) {
+    PROBES[mat].forEach(p => {
+      const o = document.createElement('option');
+      o.value = p; o.textContent = p;
+      sel.appendChild(o);
+    });
+  }
+}
+
+function onInsertChange() {
+  const val = document.getElementById('g-insert').value;
+  const detail = document.getElementById('field-insert-detail');
+  const noDetail = ['', 'Без вставки', 'Эмаль'];
+  detail.classList.toggle('hidden', noDetail.includes(val));
+}
+let currentPlatform = 'Wildberries';
+let isDark = true;
+let kwData = [];
+
+// ── Theme ─────────────────────────────────────────────
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  document.querySelector('.theme-btn').textContent = isDark ? '☀ Светлая' : '☾ Тёмная';
+}
+
+// ── Platform ──────────────────────────────────────────
+function setPlatform(p, btn) {
+  currentPlatform = p;
+  document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Tabs ──────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.getElementById('tab-gen').classList.toggle('hidden', tab !== 'gen');
+  document.getElementById('tab-kw').classList.toggle('hidden', tab !== 'kw');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('platforms').classList.toggle('hidden', tab !== 'gen');
+}
+
+// ── Copy helper ───────────────────────────────────────
+function copyText(text, btn) {
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(fallback);
+  } else { fallback(); }
+  if (btn) {
+    btn.textContent = '✓ Скопировано'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Копировать'; btn.classList.remove('copied'); }, 2000);
+  }
+}
+
+// ── Metric bar ────────────────────────────────────────
+function metricBar(label, value, max, color) {
+  const pct = Math.min((value / max) * 100, 100);
+  return `
+    <div class="metric">
+      <div class="metric-row">
+        <span class="metric-label">${label}</span>
+        <span class="metric-val" style="color:${color}">${value}${max===100?'%':''}</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+}
+
+// ── GENERATOR ─────────────────────────────────────────
+async function generate() {
+  const name = document.getElementById('g-name').value.trim();
+  const errBox = document.getElementById('g-error');
+  if (!name) { errBox.textContent = 'Укажите название товара'; errBox.classList.remove('hidden'); return; }
+  errBox.classList.add('hidden');
+
+  const btn = document.getElementById('g-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0"></div> Генерация…';
+
+  const area = document.getElementById('g-result-area');
+  area.innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">Yandex GPT пишет описание…</div></div>`;
+
+  try {
+    const resp = await fetch(`${API}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        category:      document.getElementById('g-category').value,
+        platform:      currentPlatform,
+        material:      document.getElementById('g-material').value,
+        probe:         document.getElementById('g-probe').value,
+        coating:       document.getElementById('g-coating').value,
+        color:         document.getElementById('g-color').value,
+        insert_stone:  document.getElementById('g-insert').value,
+        insert_weight: document.getElementById('g-insert-weight').value,
+        insert_cut:    document.getElementById('g-insert-cut').value,
+        features:      document.getElementById('g-features').value,
+        keywords:      document.getElementById('g-keywords').value,
+        example_desc:  document.getElementById('g-example').value,
+        char_count:    parseInt(document.getElementById('g-chars').value),
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'Ошибка сервера' }));
+      throw new Error(err.detail || 'Ошибка сервера');
+    }
+
+    const d = await resp.json();
+    const tags = (d.meta_keywords || '').split(',').map(k => `<span class="tag">${k.trim()}</span>`).join('');
+
+    area.innerHTML = `
+      <div class="card">
+        <div class="card-label">Метрики качества</div>
+        ${metricBar('SEO-рейтинг', d.seo_score||85, 100, 'var(--accent-l)')}
+        ${metricBar('Уникальность', d.uniqueness||90, 100, '#34d399')}
+        ${metricBar('Плотность ключевых слов', d.keyword_density||3.0, 8, '#a78bfa')}
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label" style="margin:0">Описание — ${currentPlatform}</div>
+          <button class="copy-btn" onclick="copyText(document.getElementById('desc-text').textContent, this)">⎘ Копировать</button>
+        </div>
+        <div class="desc-text" id="desc-text">${d.description || ''}</div>
+        <div class="desc-footer">${(d.description||'').length} символов</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Мета-данные</div>
+        <div class="meta-label">КЛЮЧЕВЫЕ СЛОВА</div>
+        <div style="margin-bottom:14px">${tags}</div>
+        <div class="meta-label">МЕТА-ОПИСАНИЕ (${(d.meta_description||'').length} симв.)</div>
+        <div class="meta-box">${d.meta_description || ''}</div>
+      </div>`;
+
+  } catch (e) {
+    area.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title" style="color:var(--error-text)">${e.message}</div><div class="empty-sub">Проверьте что сервер запущен на localhost:8000</div></div>`;
+  }
+
+  btn.disabled = false; btn.innerHTML = '✦ Сгенерировать SEO-описание';
+}
+
+// ── KEYWORDS ──────────────────────────────────────────
+document.getElementById('kw-arts').addEventListener('input', function() {
+  const arts = this.value.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  const count = Math.min([...new Set(arts)].length, 30);
+  document.getElementById('kw-arts-count').textContent = `${count}/30 артикулов`;
+});
+
+async function fetchWBCard(art) {
+  try {
+    const url = `https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm=${art}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const p = j?.data?.products?.[0];
+    if (!p) return null;
+    return {
+      title: p.name || '',
+      brand: p.brand || '',
+      description: p.description || '',
+      subjectName: p.subjectName || '',
+      colors: (p.colors||[]).map(c=>c.name).join(', '),
+      characteristics: (p.options||[]).map(o=>`${o.name}: ${o.value}`).join('; '),
+    };
+  } catch { return null; }
+}
+
+function setProgress(pct, label) {
+  document.getElementById('kw-progress-fill').style.width = pct + '%';
+  document.getElementById('kw-progress-pct').textContent = pct + '%';
+  if (label) document.getElementById('kw-progress-label').textContent = label;
+}
+
+function addStatus(art, status) {
+  const color = status === 'real' ? '#34d399' : status === 'error' ? '#f87171' : '#a78bfa';
+  const label = status === 'real' ? 'реальные данные WB' : status === 'error' ? 'ошибка' : 'ИИ-генерация';
+  document.getElementById('kw-statuses').innerHTML += `
+    <div class="status-item">
+      <span class="status-dot" style="background:${color}"></span>
+      <span style="color:var(--text-muted)">${art}</span>
+      <span style="color:${color}">${label}</span>
+    </div>`;
+}
+
+async function analyzeKeywords() {
+  const raw = document.getElementById('kw-arts').value;
+  const arts = [...new Set(raw.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean))].slice(0,30);
+  const errBox = document.getElementById('kw-error');
+
+  if (!arts.length) { errBox.textContent = 'Введите хотя бы один артикул'; errBox.classList.remove('hidden'); return; }
+  errBox.classList.add('hidden');
+
+  const btn = document.getElementById('kw-btn');
+  btn.disabled = true; btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px"></span>Анализ…';
+
+  const progBox = document.getElementById('kw-progress-box');
+  progBox.classList.remove('hidden');
+  document.getElementById('kw-statuses').innerHTML = '';
+  setProgress(0, 'Получаем данные с Wildberries…');
+
+  document.getElementById('kw-result-area').innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">Анализируем артикулы…</div></div>`;
+
+  try {
+    // Step 1: fetch WB cards in parallel
+    const cardEntries = await Promise.all(arts.map(async art => {
+      const card = await fetchWBCard(art);
+      const isReal = !!(card && card.title);
+      addStatus(art, isReal ? 'real' : 'fallback');
+      return [art, card || null];
+    }));
+    const cardData = Object.fromEntries(cardEntries.filter(([,c])=>c));
+    setProgress(40, 'Yandex GPT анализирует ключевые слова…');
+
+    // Step 2: send to backend
+    const resp = await fetch(`${API}/keywords`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articuls: arts, card_data: cardData })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({detail:'Ошибка сервера'}));
+      throw new Error(err.detail || 'Ошибка сервера');
+    }
+
+    const data = await resp.json();
+    setProgress(100, 'Готово!');
+
+    // Flatten keywords
+    let allKw = [];
+    const seen = new Set();
+    for (const item of (data.results || [])) {
+      for (const k of (item.keywords || [])) {
+        const lower = k.word.toLowerCase();
+        if (seen.has(lower)) continue;
+        seen.add(lower);
+        allKw.push({ word: k.word, cluster: k.cluster, freq: k.freq, source: item.title || item.artId, artId: item.artId, real: item.real || false, checked: false });
+      }
+      if (item.error) addStatus(item.artId, 'error');
+    }
+    kwData = allKw;
+
+    renderKwResults();
+
+  } catch(e) {
+    document.getElementById('kw-result-area').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title" style="color:var(--error-text)">${e.message}</div><div class="empty-sub">Проверьте что сервер запущен на localhost:8000</div></div>`;
+  }
+
+  btn.disabled = false; btn.innerHTML = '⚙ Собрать ключевые слова';
+}
+
+function renderKwResults() {
+  const area = document.getElementById('kw-result-area');
+  if (!kwData.length) {
+    area.innerHTML = `<div class="empty-state"><div class="empty-icon">⚙</div><div class="empty-title">Нет данных</div></div>`;
+    return;
+  }
+
+  const realCount = kwData.filter(k=>k.real).length;
+  const aiCount = kwData.filter(k=>!k.real).length;
+  const selCount = kwData.filter(k=>k.checked).length;
+
+  const clusters = [...new Set(kwData.map(k=>k.cluster))];
+
+  let html = `
+    <div class="kw-toolbar">
+      <div class="kw-count">Найдено: <strong>${kwData.length}</strong> слов</div>
+      ${realCount ? `<span class="badge badge-real">✦ ${realCount} с реальных карточек WB</span>` : ''}
+      ${aiCount ? `<span class="badge badge-ai">✦ ${aiCount} ИИ-генерация</span>` : ''}
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn-sm" onclick="toggleAllKw(true)">Выбрать все</button>
+        <button class="btn-sm" onclick="toggleAllKw(false)">Снять все</button>
+        <button class="btn-sm btn-copy-sel" id="kw-copy-btn" onclick="copySelected()" ${selCount===0?'disabled':''}>⎘ Копировать (${selCount})</button>
+      </div>
+    </div>`;
+
+  for (const cluster of clusters) {
+    const cKws = kwData.filter(k=>k.cluster===cluster);
+    html += `<div class="kw-cluster"><div class="cluster-label">${cluster} <span>(${cKws.length})</span></div>`;
+    for (let i=0; i<kwData.length; i++) {
+      const k = kwData[i];
+      if (k.cluster !== cluster) continue;
+      const freqClass = k.freq==='высокая'?'freq-h':k.freq==='средняя'?'freq-m':'freq-l';
+      const dotColor = k.real ? '#34d399' : '#a78bfa';
+      html += `
+        <div class="kw-row ${k.checked?'checked':''}" onclick="toggleKw(${i})">
+          <div class="kw-checkbox">${k.checked?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+          <span class="kw-word">${k.word}</span>
+          <span class="freq-badge ${freqClass}">${k.freq}</span>
+          <span class="status-dot" style="background:${dotColor}" title="${k.real?'Реальные данные WB':'ИИ-генерация'}"></span>
+          <span class="source-label">${k.source}</span>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  area.innerHTML = html;
+}
+
+function toggleKw(idx) {
+  kwData[idx].checked = !kwData[idx].checked;
+  renderKwResults();
+}
+function toggleAllKw(val) {
+  kwData = kwData.map(k=>({...k,checked:val}));
+  renderKwResults();
+}
+function copySelected() {
+  const sel = kwData.filter(k=>k.checked).map(k=>k.word).join(', ');
+  if (!sel) return;
+  copyText(sel, document.getElementById('kw-copy-btn'));
+}
+</script>
+</body>
+</html>

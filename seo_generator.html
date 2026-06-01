@@ -567,24 +567,7 @@ document.getElementById('kw-arts').addEventListener('input', function() {
   document.getElementById('kw-arts-count').textContent = `${count}/30 артикулов`;
 });
 
-async function fetchWBCard(art) {
-  try {
-    const url = `https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm=${art}`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return null;
-    const j = await r.json();
-    const p = j?.data?.products?.[0];
-    if (!p) return null;
-    return {
-      title: p.name || '',
-      brand: p.brand || '',
-      description: p.description || '',
-      subjectName: p.subjectName || '',
-      colors: (p.colors||[]).map(c=>c.name).join(', '),
-      characteristics: (p.options||[]).map(o=>`${o.name}: ${o.value}`).join('; '),
-    };
-  } catch { return null; }
-}
+// WB card fetching now handled server-side (no CORS issues)
 
 function setProgress(pct, label) {
   document.getElementById('kw-progress-fill').style.width = pct + '%';
@@ -622,21 +605,13 @@ async function analyzeKeywords() {
   document.getElementById('kw-result-area').innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">Анализируем артикулы…</div></div>`;
 
   try {
-    // Step 1: fetch WB cards in parallel
-    const cardEntries = await Promise.all(arts.map(async art => {
-      const card = await fetchWBCard(art);
-      const isReal = !!(card && card.title);
-      addStatus(art, isReal ? 'real' : 'fallback');
-      return [art, card || null];
-    }));
-    const cardData = Object.fromEntries(cardEntries.filter(([,c])=>c));
-    setProgress(40, 'Yandex GPT анализирует ключевые слова…');
+    setProgress(20, 'Запрашиваем данные с Wildberries…');
 
-    // Step 2: send to backend
+    // Сервер сам тянет данные с WB — без CORS
     const resp = await fetch(`${API}/keywords`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ articuls: arts, card_data: cardData })
+      body: JSON.stringify({ articuls: arts })
     });
 
     if (!resp.ok) {
@@ -644,8 +619,17 @@ async function analyzeKeywords() {
       throw new Error(err.detail || 'Ошибка сервера');
     }
 
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({detail:'Ошибка сервера'}));
+      throw new Error(err.detail || 'Ошибка сервера');
+    }
     const data = await resp.json();
     setProgress(100, 'Готово!');
+
+    // Show per-article statuses
+    for (const item of (data.results || [])) {
+      addStatus(item.artId, item.error ? 'error' : item.real ? 'real' : 'fallback');
+    }
 
     // Flatten keywords
     let allKw = [];
@@ -657,7 +641,6 @@ async function analyzeKeywords() {
         seen.add(lower);
         allKw.push({ word: k.word, cluster: k.cluster, freq: k.freq, source: item.title || item.artId, artId: item.artId, real: item.real || false, checked: false });
       }
-      if (item.error) addStatus(item.artId, 'error');
     }
     kwData = allKw;
 

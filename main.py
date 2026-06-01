@@ -1,8 +1,9 @@
 import os
 import json
 import httpx
-from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -11,51 +12,35 @@ YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
 YANDEX_URL       = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 MODEL_URI        = f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/latest"
 
-# Используем только встроенные типы Python — без pydantic моделей
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI(title="SEO Generator API")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
 )
 
 
-async def ask_yandex(system_text: str, user_text: str, temperature: float = 0.6, max_tokens: int = 2000) -> str:
+# ── Yandex GPT ────────────────────────────────────────────────────────────────
+async def ask_yandex(system_text: str, user_text: str, temperature: float = 0.5, max_tokens: int = 2000) -> str:
     if not YANDEX_API_KEY or not YANDEX_FOLDER_ID:
-        raise HTTPException(status_code=500, detail="Yandex API credentials не настроены в .env")
-
+        raise HTTPException(status_code=500, detail="Yandex API credentials не настроены")
     headers = {
         "Authorization": f"Api-Key {YANDEX_API_KEY}",
         "Content-Type":  "application/json",
     }
     body = {
         "modelUri": MODEL_URI,
-        "completionOptions": {
-            "stream":      False,
-            "temperature": temperature,
-            "maxTokens":   max_tokens,
-        },
+        "completionOptions": {"stream": False, "temperature": temperature, "maxTokens": max_tokens},
         "messages": [
             {"role": "system", "text": system_text},
             {"role": "user",   "text": user_text},
         ],
     }
-
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=90) as client:
         resp = await client.post(YANDEX_URL, headers=headers, json=body)
-
     if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code,
-                            detail=f"Yandex GPT ошибка: {resp.text}")
-
-    data = resp.json()
-    return data["result"]["alternatives"][0]["message"]["text"]
+        raise HTTPException(status_code=resp.status_code, detail=f"Yandex GPT ошибка: {resp.text}")
+    return resp.json()["result"]["alternatives"][0]["message"]["text"]
 
 
 def clean_json(raw: str) -> dict:
@@ -63,18 +48,53 @@ def clean_json(raw: str) -> dict:
     return json.loads(clean)
 
 
+# ── Fetch real WB card data (server-side, no CORS) ───────────────────────────
+async def fetch_wb_card(art: str) -> dict | None:
+    try:
+        url = f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm={art}"
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        p = data.get("data", {}).get("products", [None])[0]
+        if not p:
+            return None
+        return {
+            "title":           p.get("name", ""),
+            "brand":           p.get("brand", ""),
+            "description":     p.get("description", ""),
+            "subjectName":     p.get("subjectName", ""),
+            "colors":          ", ".join(c.get("name","") for c in p.get("colors", [])),
+            "characteristics": "; ".join(f"{o.get('name','')}: {o.get('value','')}" for o in p.get("options", [])),
+        }
+    except Exception:
+        return None
+
+
+# ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
     return {"status": "ok", "model": MODEL_URI}
 
 
+# ── WB card proxy (for frontend to get card data without CORS) ────────────────
+@app.get("/wb/card/{art}")
+async def wb_card(art: str):
+    card = await fetch_wb_card(art)
+    if not card:
+        return {"found": False}
+    return {"found": True, **card}
+
+
+# ── Generate description ──────────────────────────────────────────────────────
 @app.post("/generate")
 async def generate_description(request: Request):
     req = await request.json()
 
-    name         = req.get("name", "")
-    category     = req.get("category", "")
-    platform     = req.get("platform", "Wildberries")
+    name          = req.get("name", "")
+    category      = req.get("category", "")
+    platform      = req.get("platform", "Wildberries")
     material      = req.get("material", "")
     probe         = req.get("probe", "")
     coating       = req.get("coating", "")
@@ -83,163 +103,102 @@ async def generate_description(request: Request):
     insert_weight = req.get("insert_weight", "")
     insert_cut    = req.get("insert_cut", "")
     features      = req.get("features", "")
-    keywords     = req.get("keywords", "")
-    example_desc = req.get("example_desc", "")
-    char_count   = req.get("char_count", 700)
+    keywords      = req.get("keywords", "")
+    example_desc  = req.get("example_desc", "")
+    char_count    = int(req.get("char_count", 700))
 
     if not name:
         raise HTTPException(status_code=400, detail="Укажите название товара")
 
     example_block = ""
     if example_desc and example_desc.strip():
-        example_block = f"""
-ПРИМЕР ОПИСАНИЯ КОНКУРЕНТА (используй как ориентир по стилю, но текст должен быть уникальным):
-\"\"\"
-{example_desc.strip()[:1000]}
-\"\"\"
-"""
+        example_block = f'\nПРИМЕР ОПИСАНИЯ КОНКУРЕНТА (ориентир по стилю, текст должен быть уникальным):\n"""\n{example_desc.strip()[:1000]}\n"""\n'
 
-    system = """Ты — профессиональный SEO-копирайтер для маркетплейса {platform}, специализирующийся на создании продающих и SEO-оптимизированных описаний товаров.
-
-ТВОЯ ЗАДАЧА:
-На основе входных данных и списка ключевых слов создавать:
-1. Продающее SEO-описание товара для {platform}
-2. Текст должен выглядеть естественно, а не как набор ключей
-3. Максимально использовать SEO-потенциал без переспама
-4. Поднимать релевантность карточки в поиске {platform}
-
-────────────────────────
-ПРАВИЛА ГЕНЕРАЦИИ:
-────────────────────────
-
-• Пиши только на русском языке
-• Стиль — профессиональный, современный, дорогой
-• Текст должен быть читаемым и живым
-• Не использовать канцелярит
-• Не использовать пустые фразы
-• Не писать очевидные вещи ради объёма
-• Не добавлять информацию, которой нет во входных данных
-• Не использовать эмодзи
-• Не использовать CAPS LOCK
-• Не делать маркированные списки
-• Не использовать слова: "лучший", "идеальный", "топ", "премиум", "элитный", "люкс"
-
-────────────────────────
-SEO-ТРЕБОВАНИЯ:
-────────────────────────
-
-• Органично внедряй ключевые слова
-• Используй ключи в разных словоформах
-• Распределяй ключи равномерно по тексту
-• Самые важные ключи — в начале описания
-• Избегай повторения одной и той же фразы подряд
-• Не превращай текст в SEO-спам
-• Сохраняй естественность текста
-
-────────────────────────
-СТРУКТУРА ОПИСАНИЯ:
-────────────────────────
-
-1. Сильное первое предложение с главным ключом
-2. Основное описание товара
-3. Материалы / особенности / преимущества
-4. Для кого подходит
-5. Поводы для покупки / стиль / образ
-6. Завершение с дополнительными ключами
-
-────────────────────────
-ОСОБОЕ ПРАВИЛО ДЛЯ {platform}:
-────────────────────────
-
-{platform} лучше ранжирует:
-• высокую плотность релевантных слов
-• естественные повторения
-• длинные SEO-фразы
-• словоформы
-• смежные запросы
-
-Поэтому:
-• аккуратно расширяй ключевые фразы
-• добавляй околоцелевые запросы
-• используй LSI-лексикон
-• делай текст максимально поисково-релевантным
-
-────────────────────────
-ВАЖНО:
-────────────────────────
-
-• Генерируй текст как опытный SEO-копирайтер {platform}
-• Делай описание максимально релевантным поиску
-• Текст должен одновременно: продавать, ранжироваться, выглядеть естественно
-• Не объясняй свои действия, не добавляй комментарии
-• Сразу выдавай готовый результат в формате JSON без markdown
-
-Ответ — строго JSON без markdown:
-{{"description":"...","meta_keywords":"5 ключей через запятую","meta_description":"до 160 символов","seo_score":85,"uniqueness":90,"keyword_density":3.0}}""".format(platform=platform)
-
-    # Build insert description
     insert_parts = []
     if insert_stone and insert_stone not in ("", "Без вставки"):
         insert_parts.append(insert_stone)
         if insert_weight: insert_parts.append(insert_weight)
-        if insert_cut: insert_parts.append(f"огранка: {insert_cut}")
+        if insert_cut:    insert_parts.append(f"огранка: {insert_cut}")
     insert_str = ", ".join(insert_parts) if insert_parts else "без вставки"
 
-    material_full = material
-    if probe: material_full += f" {probe}"
+    material_full = f"{material} {probe}".strip() if probe else material
 
-    user = f"""Название товара:
-{name}
+    system = f"""Ты — копирайтер для маркетплейса {platform}. Пишешь описания ювелирных украшений для карточек товаров.
 
-Категория:
-{category}
+Правила написания:
+- Только русский язык
+- Стиль живой, профессиональный, без канцелярита
+- Не используй слова: лучший, идеальный, топ, элитный
+- Без эмодзи и маркированных списков
+- Не добавляй информацию которой нет в данных о товаре
+- Органично включай ключевые слова в разных словоформах
+- Важные ключевые слова ставь в начало текста
 
-Материал:
-{material_full if material_full.strip() else "не указан"}
+Структура текста:
+1. Первое предложение с главным ключевым словом
+2. Описание товара и его свойств
+3. Материал, вставки, покрытие
+4. Кому подходит и по какому поводу
+5. Завершение с дополнительными ключами
 
-Проба:
-{probe if probe else "не указана"}
+КРИТИЧЕСКИ ВАЖНО: описание должно быть ровно {char_count} символов (допустимо ±30 символов). Это жёсткое требование — считай символы и подгоняй текст под нужную длину.
 
-Цвет металла:
-{color if color else "не указан"}
+Отвечай строго в формате JSON без markdown:
+{{"description":"текст","meta_keywords":"5 ключей через запятую","meta_description":"до 160 символов","seo_score":85,"uniqueness":90,"keyword_density":3.0}}"""
 
-Покрытие:
-{coating if coating else "без покрытия"}
-
-Вставка:
-{insert_str}
-
-Дополнительные особенности и преимущества:
-{features if features else "не указаны"}
-
-Целевая аудитория:
-покупатели на {platform}
-
-Ключевые слова:
-{keywords if keywords else "сгенерируй самостоятельно на основе названия и категории"}
-
-Стиль текста:
-профессиональный, современный, живой
-
-Желаемая длина:
-около {char_count} символов (±50)
+    user = f"""Название товара: {name}
+Категория: {category}
+Материал: {material_full if material_full.strip() else "не указан"}
+Цвет металла: {color if color else "не указан"}
+Покрытие: {coating if coating else "без покрытия"}
+Вставка: {insert_str}
+Особенности: {features if features else "не указаны"}
+Ключевые слова: {keywords if keywords else "сгенерируй на основе названия и категории"}
+Желаемая длина: ровно {char_count} символов (±30)
 {example_block}
-Ответ — строго JSON без markdown:
-{{"description":"...","meta_keywords":"...","meta_description":"...","seo_score":85,"uniqueness":90,"keyword_density":3.0}}"""
+Ответ — строго JSON без markdown."""
 
-    raw = await ask_yandex(system, user, temperature=0.5)
+    raw = await ask_yandex(system, user, temperature=0.5, max_tokens=3000)
 
     try:
-        return clean_json(raw)
+        result = clean_json(raw)
     except Exception:
-        raise HTTPException(status_code=422, detail=f"Ошибка парсинга ответа модели: {raw[:300]}")
+        raise HTTPException(status_code=422, detail=f"Ошибка парсинга: {raw[:300]}")
+
+    desc = result.get("description", "")
+    current_len = len(desc)
+    tolerance = 50
+
+    # Если длина не совпадает — делаем второй запрос для коррекции
+    if abs(current_len - char_count) > tolerance:
+        diff = char_count - current_len
+        action = "расширь" if diff > 0 else "сократи"
+        correction_user = f"""Вот текст описания товара ({current_len} символов):
+\"\"\"{desc}\"\"\"
+
+{action} этот текст так, чтобы он стал ровно {char_count} символов (±30).
+Сохрани стиль, смысл и ключевые слова. Не добавляй новую информацию — только {'добавляй детали и развёртывай предложения' if diff > 0 else 'убирай лишнее и сокращай предложения'}.
+
+Верни только исправленный текст описания, без JSON и комментариев."""
+
+        correction_system = "Ты — редактор текстов. Корректируешь длину текста до нужного количества символов, сохраняя стиль и смысл."
+
+        try:
+            corrected = await ask_yandex(correction_system, correction_user, temperature=0.3, max_tokens=3000)
+            corrected = corrected.strip().strip('"')
+            if abs(len(corrected) - char_count) < abs(current_len - char_count):
+                result["description"] = corrected
+        except Exception:
+            pass  # оставляем оригинал если коррекция не удалась
+
+    return result
 
 
+# ── Keywords ──────────────────────────────────────────────────────────────────
 @app.post("/keywords")
 async def extract_keywords(request: Request):
     req      = await request.json()
     articuls = req.get("articuls", [])[:30]
-    card_data = req.get("card_data", {})
 
     if not articuls:
         raise HTTPException(status_code=400, detail="Список артикулов пуст")
@@ -247,53 +206,40 @@ async def extract_keywords(request: Request):
     results = []
 
     for art in articuls:
-        card = card_data.get(str(art))
+        # Тянем реальные данные с WB через сервер (без CORS)
+        card = await fetch_wb_card(str(art))
+        is_real = bool(card and card.get("title"))
 
-        if card:
+        if is_real:
             context = f"""Реальные данные карточки WB (артикул {art}):
-- Название: {card.get("title", "")}
-- Бренд: {card.get("brand", "")}
-- Категория: {card.get("subjectName", "")}
-- Цвета: {card.get("colors", "")}
-- Характеристики: {card.get("characteristics", "")}
-- Описание: {str(card.get("description", ""))[:500]}
+- Название: {card['title']}
+- Бренд: {card['brand']}
+- Категория: {card['subjectName']}
+- Цвета: {card['colors']}
+- Характеристики: {card['characteristics']}
+- Описание: {card['description'][:600]}
 
-На основе ЭТИХ данных извлеки и расширь ключевые слова."""
-            is_real = True
+Извлеки ключевые слова на основе ЭТИХ реальных данных."""
         else:
-            context = f"Данные карточки WB {art} недоступны. Сгенерируй вероятное семантическое ядро для ювелирного украшения."
-            is_real = False
+            context = f"Карточка WB {art} недоступна. Сгенерируй семантическое ядро для ювелирного украшения с таким артикулом."
 
-        system = """Ты — профессиональный SEO-специалист по маркетплейсу Wildberries с опытом в нише ювелирных украшений.
-
-ТВОЯ ЗАДАЧА:
-Составить точное семантическое ядро — список ключевых слов, которые реальные покупатели вводят в поиск WB при поиске ювелирных украшений.
-
-ПРАВИЛА:
-• Только реальные поисковые запросы — не придумывай несуществующие фразы
-• Используй словоформы и варианты написания
-• Включай как короткие (1–2 слова), так и длинные (3–5 слов) запросы
-• Учитывай специфику ювелирного рынка: металл, проба, вставки, размер, повод
-• Кластеризуй слова по смыслу
-
-КЛАСТЕРЫ:
-- «Категорийные» — общие запросы по типу товара (кольцо золотое, серьги серебро)
-- «По материалу» — металл, камень, проба (золото 585, бриллиант, фианит)
-- «По назначению» — подарок, повод, кому (подарок на день рождения, украшение для невесты)
-- «По характеристикам» — цвет, огранка, вес, размер
-- «Брендовые» — с брендом если известен
-- «LSI» — синонимы, смежные запросы, околоцелевые
-
-ЧАСТОТНОСТЬ (оценочно):
-• высокая — >10 000 поисков/мес
-• средняя — 1 000–10 000 поисков/мес
-• низкая — <1 000 поисков/мес
-
-Отвечай строго JSON без markdown."""
+        system = """Ты — SEO-специалист по Wildberries, ниша ювелирных украшений.
+Составляешь семантические ядра из реальных поисковых запросов покупателей.
+Отвечаешь строго JSON без markdown."""
 
         user = f"""{context}
 
-Составь семантическое ядро из 12–18 ключевых слов.
+Составь семантическое ядро из 12–18 ключевых слов которые реальные покупатели вводят в поиск WB.
+
+Кластеры:
+- «Категорийные» — общие запросы по типу товара
+- «По материалу» — металл, камень, проба
+- «По назначению» — подарок, повод, кому
+- «По характеристикам» — цвет, огранка, вес
+- «Брендовые» — с брендом если известен
+- «LSI» — синонимы и смежные запросы
+
+Частотность: высокая (>10к/мес), средняя (1к–10к), низкая (<1к).
 
 Ответ — строго JSON без markdown:
 {{"title":"название товара","keywords":[{{"word":"...","cluster":"...","freq":"высокая|средняя|низкая"}}]}}"""
@@ -310,11 +256,9 @@ async def extract_keywords(request: Request):
             })
         except Exception:
             results.append({
-                "artId":    art,
-                "title":    str(art),
-                "keywords": [],
-                "real":     False,
-                "error":    f"Ошибка парсинга: {raw[:200]}",
+                "artId": art, "title": str(art),
+                "keywords": [], "real": False,
+                "error": f"Ошибка парсинга: {raw[:200]}",
             })
 
     return {"results": results}

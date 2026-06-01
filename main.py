@@ -1,9 +1,13 @@
 import os
 import json
 import httpx
+import hashlib
+import secrets
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
@@ -11,6 +15,8 @@ YANDEX_API_KEY   = os.getenv("YANDEX_API_KEY")
 YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
 YANDEX_URL       = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 MODEL_URI        = f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/latest"
+DATABASE_URL     = os.getenv("DATABASE_URL")
+SECRET_KEY       = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
 app = FastAPI(title="SEO Generator API")
 app.add_middleware(
@@ -19,6 +25,161 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
+# ── Database ──────────────────────────────────────────────────────────────────
+import asyncpg
+
+db_pool = None
+
+async def get_db():
+    global db_pool
+    if db_pool is None:
+        db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=5)
+    return db_pool
+
+async def init_db():
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                is_admin BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                token VARCHAR(255) PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT NOW(),
+                expires_at TIMESTAMP NOT NULL
+            )
+        """)
+        # Создаём admin если не существует
+        existing = await conn.fetchrow("SELECT id FROM users WHERE username = 'admin'")
+        if not existing:
+            pwd_hash = hashlib.sha256("admin123".encode()).hexdigest()
+            await conn.execute(
+                "INSERT INTO users (username, password_hash, is_admin) VALUES ($1, $2, $3)",
+                "admin", pwd_hash, True
+            )
+            print("✓ Admin user created: admin / admin123")
+
+@app.on_event("startup")
+async def startup():
+    await init_db()
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+async def create_session(user_id: int) -> str:
+    token = secrets.token_hex(32)
+    expires = datetime.utcnow() + timedelta(days=30)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)",
+            token, user_id, expires
+        )
+    return token
+
+async def get_current_user(request: Request):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            SELECT u.id, u.username, u.is_admin
+            FROM sessions s JOIN users u ON s.user_id = u.id
+            WHERE s.token = $1 AND s.expires_at > NOW()
+        """, token)
+    if not row:
+        raise HTTPException(status_code=401, detail="Сессия истекла или недействительна")
+    return dict(row)
+
+async def require_admin(request: Request):
+    user = await get_current_user(request)
+    if not user["is_admin"]:
+        raise HTTPException(status_code=403, detail="Доступ только для администратора")
+    return user
+
+# ── Auth routes ───────────────────────────────────────────────────────────────
+@app.post("/auth/login")
+async def login(request: Request):
+    data = await request.json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Укажите логин и пароль")
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        user = await conn.fetchrow(
+            "SELECT * FROM users WHERE username = $1 AND password_hash = $2",
+            username, hash_password(password)
+        )
+    if not user:
+        raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+    token = await create_session(user["id"])
+    return {"token": token, "username": user["username"], "is_admin": user["is_admin"]}
+
+@app.post("/auth/logout")
+async def logout(request: Request):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token:
+        pool = await get_db()
+        async with pool.acquire() as conn:
+            await conn.execute("DELETE FROM sessions WHERE token = $1", token)
+    return {"ok": True}
+
+@app.get("/auth/me")
+async def me(request: Request):
+    user = await get_current_user(request)
+    return user
+
+# ── Admin: user management ────────────────────────────────────────────────────
+@app.get("/admin/users")
+async def list_users(request: Request):
+    await require_admin(request)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, username, is_admin, created_at FROM users ORDER BY id")
+    return [dict(r) for r in rows]
+
+@app.post("/admin/users")
+async def create_user(request: Request):
+    await require_admin(request)
+    data = await request.json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    is_admin = data.get("is_admin", False)
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Укажите логин и пароль")
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        try:
+            await conn.execute(
+                "INSERT INTO users (username, password_hash, is_admin) VALUES ($1, $2, $3)",
+                username, hash_password(password), is_admin
+            )
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
+    return {"ok": True}
+
+@app.delete("/admin/users/{user_id}")
+async def delete_user(user_id: int, request: Request):
+    await require_admin(request)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        await conn.execute("DELETE FROM users WHERE id = $1 AND username != 'admin'", user_id)
+    return {"ok": True}
+
+# ── Health ────────────────────────────────────────────────────────────────────
+@app.get("/health")
+async def health():
+    return {"status": "ok", "model": MODEL_URI}
 
 # ── Yandex GPT ────────────────────────────────────────────────────────────────
 async def ask_yandex(system_text: str, user_text: str, temperature: float = 0.5, max_tokens: int = 2000) -> str:
@@ -42,13 +203,11 @@ async def ask_yandex(system_text: str, user_text: str, temperature: float = 0.5,
         raise HTTPException(status_code=resp.status_code, detail=f"Yandex GPT ошибка: {resp.text}")
     return resp.json()["result"]["alternatives"][0]["message"]["text"]
 
-
 def clean_json(raw: str) -> dict:
     clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     return json.loads(clean)
 
-
-# ── Fetch real WB card data (server-side, no CORS) ───────────────────────────
+# ── WB card fetch ─────────────────────────────────────────────────────────────
 async def fetch_wb_card(art: str) -> dict | None:
     try:
         url = f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm={art}"
@@ -56,8 +215,7 @@ async def fetch_wb_card(art: str) -> dict | None:
             r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
         if r.status_code != 200:
             return None
-        data = r.json()
-        p = data.get("data", {}).get("products", [None])[0]
+        p = r.json().get("data", {}).get("products", [None])[0]
         if not p:
             return None
         return {
@@ -71,25 +229,10 @@ async def fetch_wb_card(art: str) -> dict | None:
     except Exception:
         return None
 
-
-# ── Health ────────────────────────────────────────────────────────────────────
-@app.get("/health")
-async def health():
-    return {"status": "ok", "model": MODEL_URI}
-
-
-# ── WB card proxy (for frontend to get card data without CORS) ────────────────
-@app.get("/wb/card/{art}")
-async def wb_card(art: str):
-    card = await fetch_wb_card(art)
-    if not card:
-        return {"found": False}
-    return {"found": True, **card}
-
-
-# ── Generate description ──────────────────────────────────────────────────────
+# ── Generate ──────────────────────────────────────────────────────────────────
 @app.post("/generate")
 async def generate_description(request: Request):
+    await get_current_user(request)  # проверка авторизации
     req = await request.json()
 
     name          = req.get("name", "")
@@ -120,93 +263,72 @@ async def generate_description(request: Request):
         if insert_weight: insert_parts.append(insert_weight)
         if insert_cut:    insert_parts.append(f"огранка: {insert_cut}")
     insert_str = ", ".join(insert_parts) if insert_parts else "без вставки"
-
     material_full = f"{material} {probe}".strip() if probe else material
 
-    system = f"""Ты — копирайтер для маркетплейса {platform}. Пишешь описания ювелирных украшений для карточек товаров.
+    system = f"""Ты — копирайтер для маркетплейса {platform}. Пишешь описания ювелирных украшений.
 
-Правила написания:
-- Только русский язык
-- Стиль живой, профессиональный, без канцелярита
-- Не используй слова: лучший, идеальный, топ, элитный
+Правила:
+- Только русский язык, стиль живой и профессиональный
+- Не используй: лучший, идеальный, топ, элитный
 - Без эмодзи и маркированных списков
-- Не добавляй информацию которой нет в данных о товаре
+- Не добавляй информацию которой нет в данных
 - Органично включай ключевые слова в разных словоформах
-- Важные ключевые слова ставь в начало текста
 
-Структура текста:
-1. Первое предложение с главным ключевым словом
-2. Описание товара и его свойств
-3. Материал, вставки, покрытие
-4. Кому подходит и по какому поводу
-5. Завершение с дополнительными ключами
+Структура: сильное первое предложение → описание товара → материал и вставки → кому подходит → завершение с ключами.
 
-КРИТИЧЕСКИ ВАЖНО: описание должно быть ровно {char_count} символов (допустимо ±30 символов). Это жёсткое требование — считай символы и подгоняй текст под нужную длину.
+КРИТИЧЕСКИ ВАЖНО: описание должно быть ровно {char_count} символов (±30). Считай символы и подгоняй текст.
 
-Отвечай строго в формате JSON без markdown:
+Отвечай строго JSON без markdown:
 {{"description":"текст","meta_keywords":"5 ключей через запятую","meta_description":"до 160 символов","seo_score":85,"uniqueness":90,"keyword_density":3.0}}"""
 
-    user = f"""Название товара: {name}
+    user = f"""Название: {name}
 Категория: {category}
 Материал: {material_full if material_full.strip() else "не указан"}
 Цвет металла: {color if color else "не указан"}
 Покрытие: {coating if coating else "без покрытия"}
 Вставка: {insert_str}
 Особенности: {features if features else "не указаны"}
-Ключевые слова: {keywords if keywords else "сгенерируй на основе названия и категории"}
-Желаемая длина: ровно {char_count} символов (±30)
+Ключевые слова: {keywords if keywords else "сгенерируй на основе названия"}
+Длина: ровно {char_count} символов (±30)
 {example_block}
 Ответ — строго JSON без markdown."""
 
     raw = await ask_yandex(system, user, temperature=0.5, max_tokens=3000)
-
     try:
         result = clean_json(raw)
     except Exception:
         raise HTTPException(status_code=422, detail=f"Ошибка парсинга: {raw[:300]}")
 
+    # Коррекция длины если промахнулись больше чем на 50 символов
     desc = result.get("description", "")
-    current_len = len(desc)
-    tolerance = 50
-
-    # Если длина не совпадает — делаем второй запрос для коррекции
-    if abs(current_len - char_count) > tolerance:
-        diff = char_count - current_len
+    if abs(len(desc) - char_count) > 50:
+        diff = char_count - len(desc)
         action = "расширь" if diff > 0 else "сократи"
-        correction_user = f"""Вот текст описания товара ({current_len} символов):
-\"\"\"{desc}\"\"\"
-
-{action} этот текст так, чтобы он стал ровно {char_count} символов (±30).
-Сохрани стиль, смысл и ключевые слова. Не добавляй новую информацию — только {'добавляй детали и развёртывай предложения' if diff > 0 else 'убирай лишнее и сокращай предложения'}.
-
-Верни только исправленный текст описания, без JSON и комментариев."""
-
-        correction_system = "Ты — редактор текстов. Корректируешь длину текста до нужного количества символов, сохраняя стиль и смысл."
-
         try:
-            corrected = await ask_yandex(correction_system, correction_user, temperature=0.3, max_tokens=3000)
+            corrected = await ask_yandex(
+                "Ты — редактор. Корректируешь длину текста до нужного количества символов.",
+                f"""Текст ({len(desc)} символов):\n\"\"\"{desc}\"\"\"\n\n{action} до {char_count} символов (±30). Верни только текст без JSON и комментариев.""",
+                temperature=0.3, max_tokens=3000
+            )
             corrected = corrected.strip().strip('"')
-            if abs(len(corrected) - char_count) < abs(current_len - char_count):
+            if abs(len(corrected) - char_count) < abs(len(desc) - char_count):
                 result["description"] = corrected
         except Exception:
-            pass  # оставляем оригинал если коррекция не удалась
+            pass
 
     return result
-
 
 # ── Keywords ──────────────────────────────────────────────────────────────────
 @app.post("/keywords")
 async def extract_keywords(request: Request):
+    await get_current_user(request)  # проверка авторизации
     req      = await request.json()
     articuls = req.get("articuls", [])[:30]
-
     if not articuls:
         raise HTTPException(status_code=400, detail="Список артикулов пуст")
 
     results = []
-
     for art in articuls:
-        # Тянем реальные данные с WB через сервер (без CORS)
         card = await fetch_wb_card(str(art))
         is_real = bool(card and card.get("title"))
 
@@ -215,50 +337,20 @@ async def extract_keywords(request: Request):
 - Название: {card['title']}
 - Бренд: {card['brand']}
 - Категория: {card['subjectName']}
-- Цвета: {card['colors']}
 - Характеристики: {card['characteristics']}
-- Описание: {card['description'][:600]}
-
-Извлеки ключевые слова на основе ЭТИХ реальных данных."""
+- Описание: {card['description'][:600]}"""
         else:
-            context = f"Карточка WB {art} недоступна. Сгенерируй семантическое ядро для ювелирного украшения с таким артикулом."
+            context = f"Карточка WB {art} недоступна. Сгенерируй семантическое ядро для ювелирного украшения."
 
-        system = """Ты — SEO-специалист по Wildberries, ниша ювелирных украшений.
-Составляешь семантические ядра из реальных поисковых запросов покупателей.
-Отвечаешь строго JSON без markdown."""
-
-        user = f"""{context}
-
-Составь семантическое ядро из 12–18 ключевых слов которые реальные покупатели вводят в поиск WB.
-
-Кластеры:
-- «Категорийные» — общие запросы по типу товара
-- «По материалу» — металл, камень, проба
-- «По назначению» — подарок, повод, кому
-- «По характеристикам» — цвет, огранка, вес
-- «Брендовые» — с брендом если известен
-- «LSI» — синонимы и смежные запросы
-
-Частотность: высокая (>10к/мес), средняя (1к–10к), низкая (<1к).
-
-Ответ — строго JSON без markdown:
-{{"title":"название товара","keywords":[{{"word":"...","cluster":"...","freq":"высокая|средняя|низкая"}}]}}"""
-
-        raw = await ask_yandex(system, user, temperature=0.4)
-
+        raw = await ask_yandex(
+            "Ты — SEO-специалист по Wildberries, ниша ювелирных украшений. Отвечаешь строго JSON без markdown.",
+            f"""{context}\n\nСоставь семантическое ядро из 12–18 ключевых слов.\nКластеры: Категорийные, По материалу, По назначению, По характеристикам, Брендовые, LSI.\nЧастотность: высокая/средняя/низкая.\n\nJSON: {{"title":"...","keywords":[{{"word":"...","cluster":"...","freq":"..."}}]}}""",
+            temperature=0.4
+        )
         try:
             parsed = clean_json(raw)
-            results.append({
-                "artId":    art,
-                "title":    parsed.get("title", str(art)),
-                "keywords": parsed.get("keywords", []),
-                "real":     is_real,
-            })
+            results.append({"artId": art, "title": parsed.get("title", str(art)), "keywords": parsed.get("keywords", []), "real": is_real})
         except Exception:
-            results.append({
-                "artId": art, "title": str(art),
-                "keywords": [], "real": False,
-                "error": f"Ошибка парсинга: {raw[:200]}",
-            })
+            results.append({"artId": art, "title": str(art), "keywords": [], "real": False, "error": raw[:200]})
 
     return {"results": results}

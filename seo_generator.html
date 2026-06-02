@@ -449,6 +449,41 @@
       <div id="users-list"></div>
     </div>
   </div>
+
+  <!-- Invite codes -->
+  <div style="margin-top:32px">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:-0.03em">Инвайт-коды</div>
+    <div style="color:var(--text-muted);font-size:13px;margin-bottom:18px">Генерируйте коды для регистрации новых пользователей</div>
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Новый код</div>
+        <div style="margin-bottom:14px">
+          <label class="field-label">Срок действия</label>
+          <select id="invite-days" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none">
+            <option value="">Бессрочный</option>
+            <option value="1">1 день</option>
+            <option value="7">7 дней</option>
+            <option value="30">30 дней</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="createInvite()">+ Сгенерировать код</button>
+        <div id="new-invite-result" style="margin-top:14px;display:none">
+          <div style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">НОВЫЙ КОД — скопируй и отправь пользователю</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <code id="new-invite-code" style="flex:1;background:var(--bg);border:1px solid var(--accent-border);border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--accent-l);letter-spacing:0.1em"></code>
+            <button class="copy-btn" onclick="copyInviteCode()">⎘ Копировать</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:13px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">История кодов</div>
+          <button class="btn-sm" onclick="loadInvites()">↻ Обновить</button>
+        </div>
+        <div id="invites-list"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="footer">ИИ-система генерации SEO-описаний · Митрясов Д.С. · НГИЭУ · 2026</div>

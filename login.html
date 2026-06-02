@@ -6,22 +6,27 @@
 <title>SEO Generator — Вход</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700;800&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #060d1a; color: #e2e8f0; font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px; }
-  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #38bdf8, #6366f1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
-  .logo h1 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-  .logo p { font-size: 11px; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
-  .field input { width: 100%; background: #060d1a; border: 1px solid #1e293b; border-radius: 8px; color: #e2e8f0; padding: 12px 14px; font-size: 14px; font-family: 'IBM Plex Sans', sans-serif; outline: none; transition: border-color .15s, box-shadow .15s; }
-  .field input:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,0.12); }
-  .btn { width: 100%; background: #0ea5e9; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: all .2s; margin-top: 8px; }
-  .btn:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
-  .btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; transform: none; }
-  .error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 11px 14px; margin-bottom: 16px; font-size: 13px; color: #fca5a5; display: none; }
-  .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #334155; font-family: 'IBM Plex Mono', monospace; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#060d1a;color:#e2e8f0;font-family:'IBM Plex Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:40px 36px;width:100%;max-width:420px}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#38bdf8,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0}
+  .logo h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-0.02em}
+  .logo p{font-size:11px;color:#64748b;font-family:'IBM Plex Mono',monospace}
+  .tabs{display:flex;background:#060d1a;border-radius:8px;padding:3px;border:1px solid #1e293b;margin-bottom:24px}
+  .tab{flex:1;padding:8px;border:none;background:transparent;color:#64748b;font-size:13px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;border-radius:6px;transition:all .15s}
+  .tab.active{background:#1e293b;color:#e2e8f0;font-weight:500}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-family:'IBM Plex Mono',monospace;margin-bottom:6px}
+  .field input{width:100%;background:#060d1a;border:1px solid #1e293b;border-radius:8px;color:#e2e8f0;padding:12px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s}
+  .field input:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,0.12)}
+  .invite-hint{font-size:12px;color:#475569;font-family:'IBM Plex Mono',monospace;margin-top:5px}
+  .btn{width:100%;background:#0ea5e9;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .2s;margin-top:6px}
+  .btn:hover:not(:disabled){filter:brightness(1.15);transform:translateY(-1px)}
+  .btn:disabled{background:#1e293b;color:#64748b;cursor:not-allowed;transform:none}
+  .error{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#fca5a5;display:none}
+  .success{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#6ee7b7;display:none}
+  .footer{text-align:center;margin-top:20px;font-size:11px;color:#334155;font-family:'IBM Plex Mono',monospace}
 </style>
 </head>
 <body>
@@ -34,18 +39,32 @@
     </div>
   </div>
 
-  <div class="error" id="error"></div>
-
-  <div class="field">
-    <label>Логин</label>
-    <input id="username" type="text" placeholder="Введите логин" autocomplete="username">
-  </div>
-  <div class="field">
-    <label>Пароль</label>
-    <input id="password" type="password" placeholder="Введите пароль" autocomplete="current-password">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login',this)">Вход</button>
+    <button class="tab" onclick="switchTab('register',this)">Регистрация</button>
   </div>
 
-  <button class="btn" id="btn" onclick="login()">Войти</button>
+  <!-- LOGIN -->
+  <div id="panel-login">
+    <div class="error" id="login-error"></div>
+    <div class="field"><label>Логин</label><input id="login-username" type="text" placeholder="Введите логин" autocomplete="username"></div>
+    <div class="field"><label>Пароль</label><input id="login-password" type="password" placeholder="Введите пароль" autocomplete="current-password"></div>
+    <button class="btn" id="login-btn" onclick="login()">Войти</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="panel-register" style="display:none">
+    <div class="error" id="reg-error"></div>
+    <div class="success" id="reg-success"></div>
+    <div class="field"><label>Логин</label><input id="reg-username" type="text" placeholder="Придумайте логин" autocomplete="username"></div>
+    <div class="field"><label>Пароль</label><input id="reg-password" type="password" placeholder="Минимум 6 символов" autocomplete="new-password"></div>
+    <div class="field">
+      <label>Инвайт-код</label>
+      <input id="reg-code" type="text" placeholder="XXXXXXXXXXXXXXXX" style="text-transform:uppercase;letter-spacing:0.1em;font-family:'IBM Plex Mono',monospace">
+      <div class="invite-hint">Код предоставляется администратором</div>
+    </div>
+    <button class="btn" id="reg-btn" onclick="register()">Зарегистрироваться</button>
+  </div>
 
   <div class="footer">Митрясов Д.С. · НГИЭУ · 2026</div>
 </div>
@@ -53,46 +72,61 @@
 <script>
 const API = 'https://seogen-production-961a.up.railway.app';
 
-// Если уже залогинен — редирект
 const token = localStorage.getItem('seo_token');
 if (token) {
   fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r => r.ok ? window.location.href = 'seo_generator.html' : null)
-    .catch(() => null);
+    .then(r => r.ok ? window.location.href = 'seo_generator.html' : null).catch(()=>{});
 }
 
-document.getElementById('password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') login();
-});
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') { if (document.getElementById('panel-login').style.display !== 'none') login(); else register(); } });
 
 async function login() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
-  const errBox = document.getElementById('error');
-  const btn = document.getElementById('btn');
-
-  if (!username || !password) {
-    errBox.textContent = 'Введите логин и пароль'; errBox.style.display = 'block'; return;
-  }
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errBox = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  if (!username || !password) { errBox.textContent = 'Введите логин и пароль'; errBox.style.display = 'block'; return; }
   errBox.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Вход…';
-
   try {
-    const r = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
+    const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
     const data = await r.json();
     if (!r.ok) { errBox.textContent = data.detail || 'Ошибка входа'; errBox.style.display = 'block'; return; }
     localStorage.setItem('seo_token', data.token);
     localStorage.setItem('seo_username', data.username);
     localStorage.setItem('seo_is_admin', data.is_admin);
     window.location.href = 'seo_generator.html';
-  } catch {
-    errBox.textContent = 'Ошибка соединения с сервером'; errBox.style.display = 'block';
-  }
+  } catch { errBox.textContent = 'Ошибка соединения'; errBox.style.display = 'block'; }
   btn.disabled = false; btn.textContent = 'Войти';
+}
+
+async function register() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value.trim();
+  const invite_code = document.getElementById('reg-code').value.trim().toUpperCase();
+  const errBox = document.getElementById('reg-error');
+  const sucBox = document.getElementById('reg-success');
+  const btn = document.getElementById('reg-btn');
+  errBox.style.display = 'none'; sucBox.style.display = 'none';
+  if (!username || !password || !invite_code) { errBox.textContent = 'Заполните все поля'; errBox.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Регистрация…';
+  try {
+    const r = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password, invite_code}) });
+    const data = await r.json();
+    if (!r.ok) { errBox.textContent = data.detail || 'Ошибка'; errBox.style.display = 'block'; return; }
+    localStorage.setItem('seo_token', data.token);
+    localStorage.setItem('seo_username', data.username);
+    localStorage.setItem('seo_is_admin', data.is_admin);
+    window.location.href = 'seo_generator.html';
+  } catch { errBox.textContent = 'Ошибка соединения'; errBox.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Зарегистрироваться';
 }
 </script>
 </body>

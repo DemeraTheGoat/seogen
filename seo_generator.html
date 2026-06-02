@@ -181,9 +181,7 @@
   </div>
 
   <div class="platforms" id="platforms">
-    <button class="plat-btn active" onclick="setPlatform('Wildberries', this)">Wildberries</button>
-    <button class="plat-btn" onclick="setPlatform('Ozon', this)">Ozon</button>
-    <button class="plat-btn" onclick="setPlatform('Яндекс.Маркет', this)">Яндекс.Маркет</button>
+    <span style="padding:3px 9px;border-radius:4px;font-size:11px;background:var(--accent-bg);border:1px solid var(--accent-l);color:var(--accent-l);font-family:'IBM Plex Mono',monospace">Wildberries</span>
   </div>
 
   <div class="tabs">
@@ -194,6 +192,7 @@
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
     <span style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">👤 <span id="header-username"></span></span>
     <button class="theme-btn" onclick="toggleTheme()">☀ Светлая</button>
+    <button class="theme-btn" onclick="openPwdModal()">🔑 Пароль</button>
     <button class="theme-btn" onclick="logout()" style="color:#f87171;border-color:rgba(248,113,113,0.3)">Выйти</button>
   </div>
 </div>
@@ -396,6 +395,22 @@
   </div>
 </div>
 
+<!-- Change password modal -->
+<div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:380px;margin:16px">
+    <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:800;margin-bottom:20px">Смена пароля</div>
+    <div class="error-box hidden" id="pwd-error"></div>
+    <div class="success-box hidden" id="pwd-success" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#6ee7b7"></div>
+    <div class="field"><label class="field-label">Текущий пароль</label><input id="pwd-old" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
+    <div class="field"><label class="field-label">Новый пароль</label><input id="pwd-new" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
+    <div class="field" style="margin-bottom:20px"><label class="field-label">Повторите новый пароль</label><input id="pwd-confirm" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary" onclick="changePassword()" style="flex:1">Сохранить</button>
+      <button onclick="closePwdModal()" style="padding:14px 20px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-muted);cursor:pointer;font-family:'IBM Plex Sans',sans-serif">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- TAB: ADMIN                                            -->
 <!-- ══════════════════════════════════════════════════════ -->
@@ -520,13 +535,85 @@ function toggleTheme() {
 }
 
 // ── Platform ──────────────────────────────────────────
-function setPlatform(p, btn) {
-  currentPlatform = p;
-  document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
+
 
 // ── Tabs ──────────────────────────────────────────────
+// ── Password modal ────────────────────────────────────
+function openPwdModal() {
+  document.getElementById('pwd-modal').style.display = 'flex';
+  document.getElementById('pwd-old').value = '';
+  document.getElementById('pwd-new').value = '';
+  document.getElementById('pwd-confirm').value = '';
+  document.getElementById('pwd-error').classList.add('hidden');
+  document.getElementById('pwd-success').classList.add('hidden');
+}
+function closePwdModal() { document.getElementById('pwd-modal').style.display = 'none'; }
+
+async function changePassword() {
+  const old_password = document.getElementById('pwd-old').value;
+  const new_password = document.getElementById('pwd-new').value;
+  const confirm = document.getElementById('pwd-confirm').value;
+  const errBox = document.getElementById('pwd-error');
+  const sucBox = document.getElementById('pwd-success');
+  errBox.classList.add('hidden'); sucBox.classList.add('hidden');
+  if (!old_password || !new_password) { errBox.textContent = 'Заполните все поля'; errBox.classList.remove('hidden'); return; }
+  if (new_password !== confirm) { errBox.textContent = 'Пароли не совпадают'; errBox.classList.remove('hidden'); return; }
+  if (new_password.length < 6) { errBox.textContent = 'Минимум 6 символов'; errBox.classList.remove('hidden'); return; }
+  try {
+    const r = await fetch(`${API}/auth/change-password`, { method:'POST', headers:authHeaders(), body:JSON.stringify({old_password, new_password}) });
+    const data = await r.json();
+    if (!r.ok) { errBox.textContent = data.detail || 'Ошибка'; errBox.classList.remove('hidden'); return; }
+    sucBox.textContent = 'Пароль успешно изменён'; sucBox.classList.remove('hidden');
+    setTimeout(closePwdModal, 1500);
+  } catch { errBox.textContent = 'Ошибка соединения'; errBox.classList.remove('hidden'); }
+}
+
+// ── Invites ───────────────────────────────────────────
+async function createInvite() {
+  const days = document.getElementById('invite-days').value;
+  try {
+    const r = await fetch(`${API}/admin/invites`, { method:'POST', headers:authHeaders(), body:JSON.stringify({days: days ? parseInt(days) : null}) });
+    const data = await r.json();
+    if (!r.ok) return;
+    document.getElementById('new-invite-code').textContent = data.code;
+    document.getElementById('new-invite-result').style.display = 'block';
+    loadInvites();
+  } catch {}
+}
+
+function copyInviteCode() {
+  const code = document.getElementById('new-invite-code').textContent;
+  copyText(code);
+}
+
+async function loadInvites() {
+  const list = document.getElementById('invites-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Загрузка…</div>';
+  try {
+    const r = await fetch(`${API}/admin/invites`, { headers:authHeaders() });
+    const invites = await r.json();
+    if (!invites.length) { list.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Нет кодов</div>'; return; }
+    list.innerHTML = invites.map(inv => {
+      const used = !!inv.used_by_username;
+      const expires = inv.expires_at ? new Date(inv.expires_at).toLocaleDateString('ru') : 'Бессрочный';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid ${used?'var(--border)':'var(--accent-border)'};border-radius:8px;margin-bottom:6px;opacity:${used?0.5:1}">
+        <code style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:13px;color:${used?'var(--text-muted)':'var(--accent-l)'};letter-spacing:0.08em">${inv.code}</code>
+        <div style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;text-align:right">
+          <div>${used ? '✓ '+inv.used_by_username : '⏳ не использован'}</div>
+          <div>${expires}</div>
+        </div>
+        ${!used ? `<button onclick="deleteInvite(${inv.id})" style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:6px;color:#f87171;padding:5px 10px;cursor:pointer;font-size:11px;font-family:'IBM Plex Mono',monospace">Удалить</button>` : ''}
+      </div>`;
+    }).join('');
+  } catch { list.innerHTML = '<div style="color:var(--error-text);font-size:13px">Ошибка загрузки</div>'; }
+}
+
+async function deleteInvite(id) {
+  await fetch(`${API}/admin/invites/${id}`, { method:'DELETE', headers:authHeaders() });
+  loadInvites();
+}
+
 async function loadUsers() {
   const list = document.getElementById('users-list');
   if (!list) return;
@@ -586,7 +673,7 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('platforms').classList.toggle('hidden', tab !== 'gen');
-  if (tab === 'admin') loadUsers();
+  if (tab === 'admin') { loadUsers(); loadInvites(); }
 }
 
 // ── Copy helper ───────────────────────────────────────
@@ -642,7 +729,7 @@ async function generate() {
       body: JSON.stringify({
         name,
         category:      document.getElementById('g-category').value,
-        platform:      currentPlatform,
+        platform:      'Wildberries',
         material:      document.getElementById('g-material').value,
         probe:         document.getElementById('g-probe').value,
         coating:       document.getElementById('g-coating').value,

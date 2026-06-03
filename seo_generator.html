@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEO Generator — Ювелирные украшения</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700;800&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -24,7 +24,7 @@
     --error-bg: rgba(185,28,28,0.06); --error-border: rgba(185,28,28,0.3); --error-text: #991b1b;
   }
 
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; transition: background .25s, color .25s; }
+  body { background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; min-height: 100vh; transition: background .25s, color .25s; }
 
   /* HEADER */
   .header { border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; gap: 12px; background: rgba(15,23,42,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
@@ -57,7 +57,7 @@
   .field input, .field select, .field textarea {
     width: 100%; background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; color: var(--text); padding: 11px 14px;
-    font-size: 14px; font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px; font-family: 'Montserrat', sans-serif;
     transition: border-color .15s, box-shadow .15s; outline: none;
   }
   .field input:focus, .field select:focus, .field textarea:focus {
@@ -73,7 +73,7 @@
   .slider-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
 
   /* BUTTON */
-  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; letter-spacing: .02em; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; }
+  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; letter-spacing: .02em; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; }
   .btn-primary:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
   .btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; }
 
@@ -187,6 +187,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('gen', this)">✦ Генератор</button>
     <button class="tab-btn" onclick="switchTab('kw', this)">⚙ Ключевые слова</button>
+    <button class="tab-btn" onclick="switchTab('history', this)">📋 История</button>
   </div>
 
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
@@ -205,7 +206,7 @@
     <!-- LEFT: form -->
     <div>
       <div class="section-title">Данные о товаре</div>
-      <div class="section-sub">Заполните характеристики — Yandex GPT напишет уникальный SEO-текст</div>
+      <div class="section-sub">Заполните характеристики — ИИ напишет уникальный SEO-текст</div>
 
       <div class="field">
         <label>Название товара *</label>
@@ -401,12 +402,12 @@
     <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:800;margin-bottom:20px">Смена пароля</div>
     <div class="error-box hidden" id="pwd-error"></div>
     <div class="success-box hidden" id="pwd-success" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#6ee7b7"></div>
-    <div class="field"><label class="field-label">Текущий пароль</label><input id="pwd-old" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
-    <div class="field"><label class="field-label">Новый пароль</label><input id="pwd-new" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
-    <div class="field" style="margin-bottom:20px"><label class="field-label">Повторите новый пароль</label><input id="pwd-confirm" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none"></div>
+    <div class="field"><label class="field-label">Текущий пароль</label><input id="pwd-old" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none"></div>
+    <div class="field"><label class="field-label">Новый пароль</label><input id="pwd-new" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none"></div>
+    <div class="field" style="margin-bottom:20px"><label class="field-label">Повторите новый пароль</label><input id="pwd-confirm" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none"></div>
     <div style="display:flex;gap:10px">
       <button class="btn-primary" onclick="changePassword()" style="flex:1">Сохранить</button>
-      <button onclick="closePwdModal()" style="padding:14px 20px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-muted);cursor:pointer;font-family:'IBM Plex Sans',sans-serif">Отмена</button>
+      <button onclick="closePwdModal()" style="padding:14px 20px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-muted);cursor:pointer;font-family:'Montserrat',sans-serif">Отмена</button>
     </div>
   </div>
 </div>
@@ -425,11 +426,11 @@
         <div class="card-label">Новый пользователь</div>
         <div class="field">
           <label>Логин</label>
-          <input id="new-username" type="text" placeholder="Введите логин" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none">
+          <input id="new-username" type="text" placeholder="Введите логин" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none">
         </div>
         <div class="field">
           <label>Пароль</label>
-          <input id="new-password" type="text" placeholder="Введите пароль" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none">
+          <input id="new-password" type="text" placeholder="Введите пароль" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none">
         </div>
         <div class="field" style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
           <input type="checkbox" id="new-is-admin" style="width:16px;height:16px;accent-color:var(--accent-l)">
@@ -449,41 +450,26 @@
       <div id="users-list"></div>
     </div>
   </div>
+</div>
 
-  <!-- Invite codes -->
-  <div style="margin-top:32px">
-    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:-0.03em">Инвайт-коды</div>
-    <div style="color:var(--text-muted);font-size:13px;margin-bottom:18px">Генерируйте коды для регистрации новых пользователей</div>
-    <div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Новый код</div>
-        <div style="margin-bottom:14px">
-          <label class="field-label">Срок действия</label>
-          <select id="invite-days" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none">
-            <option value="">Бессрочный</option>
-            <option value="1">1 день</option>
-            <option value="7">7 дней</option>
-            <option value="30">30 дней</option>
-          </select>
-        </div>
-        <button class="btn-primary" onclick="createInvite()">+ Сгенерировать код</button>
-        <div id="new-invite-result" style="margin-top:14px;display:none">
-          <div style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">НОВЫЙ КОД — скопируй и отправь пользователю</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <code id="new-invite-code" style="flex:1;background:var(--bg);border:1px solid var(--accent-border);border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--accent-l);letter-spacing:0.1em"></code>
-            <button class="copy-btn" onclick="copyInviteCode()">⎘ Копировать</button>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div style="font-size:13px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">История кодов</div>
-          <button class="btn-sm" onclick="loadInvites()">↻ Обновить</button>
-        </div>
-        <div id="invites-list"></div>
-      </div>
-    </div>
+<!-- HISTORY TAB -->
+<div class="main hidden" id="tab-history">
+  <div class="section-title">История генераций</div>
+  <div class="section-sub" style="margin-bottom:22px">Все ваши сгенерированные описания сохраняются здесь</div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+    <button class="btn-sm" onclick="loadHistory()">↻ Обновить</button>
   </div>
+  <div id="history-list"></div>
+</div>
+
+<!-- LOGS TAB -->
+<div class="main hidden" id="tab-logs">
+  <div class="section-title">Журнал запросов</div>
+  <div class="section-sub" style="margin-bottom:22px">Последние 200 запросов к системе</div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+    <button class="btn-sm" onclick="loadLogs()">↻ Обновить</button>
+  </div>
+  <div id="logs-list" style="overflow-x:auto"></div>
 </div>
 
 <div class="footer">ИИ-система генерации SEO-описаний · Митрясов Д.С. · НГИЭУ · 2026</div>
@@ -557,6 +543,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const adminBtn = document.createElement('button');
       adminBtn.className = 'tab-btn';
       adminBtn.textContent = '⚙ Пользователи';
+      // Add logs tab for admin
+      const logsBtn = document.createElement('button');
+      logsBtn.className = 'tab-btn';
+      logsBtn.textContent = '📊 Логи';
+      logsBtn.onclick = function() { switchTab('logs', this); };
+      tabs.appendChild(logsBtn);
       adminBtn.onclick = function() { switchTab('admin', this); };
       tabs.appendChild(adminBtn);
     }
@@ -705,10 +697,16 @@ function switchTab(tab, btn) {
   document.getElementById('tab-kw').classList.toggle('hidden', tab !== 'kw');
   const adminTab = document.getElementById('tab-admin');
   if (adminTab) adminTab.classList.toggle('hidden', tab !== 'admin');
+  const histTab = document.getElementById('tab-history');
+  if (histTab) histTab.classList.toggle('hidden', tab !== 'history');
+  const logsTab = document.getElementById('tab-logs');
+  if (logsTab) logsTab.classList.toggle('hidden', tab !== 'logs');
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('platforms').classList.toggle('hidden', tab !== 'gen');
   if (tab === 'admin') { loadUsers(); loadInvites(); }
+  if (tab === 'history') loadHistory();
+  if (tab === 'logs') loadLogs();
 }
 
 // ── Copy helper ───────────────────────────────────────
@@ -755,7 +753,7 @@ async function generate() {
   btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0"></div> Генерация…';
 
   const area = document.getElementById('g-result-area');
-  area.innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">Yandex GPT пишет описание…</div></div>`;
+  area.innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">ИИ генерирует описание…</div></div>`;
 
   try {
     const resp = await fetch(`${API}/generate`, {
@@ -787,7 +785,21 @@ async function generate() {
     const d = await resp.json();
     const tags = (d.meta_keywords || '').split(',').map(k => `<span class="tag">${k.trim()}</span>`).join('');
 
-    area.innerHTML = `
+    const verBlock = d.verification ? `
+      <div class="card">
+        <div class="card-label">Проверка WB</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${d.verification.passed?'#34d399':'#f87171'}"></div>
+          <span style="font-size:13px;color:${d.verification.passed?'#34d399':'#f87171'};font-family:'IBM Plex Mono',monospace">
+            ${d.verification.passed ? 'Описание прошло проверку WB' : 'Обнаружены проблемы'}
+          </span>
+        </div>
+        ${d.verification.issues.map(i=>`<div style="font-size:12px;color:#f87171;padding:5px 0;border-bottom:1px solid var(--border)">⚠ ${i}</div>`).join('')}
+        ${d.verification.warnings.map(w=>`<div style="font-size:12px;color:#fbbf24;padding:5px 0;border-bottom:1px solid var(--border)">⚡ ${w}</div>`).join('')}
+        ${d.verification.passed && !d.verification.warnings.length ? '<div style="font-size:12px;color:#34d399">✓ Длина, стоп-слова, контакты, эмодзи — всё в порядке</div>' : ''}
+      </div>` : '';
+
+    area.innerHTML = verBlock + `
       <div class="card">
         <div class="card-label">Метрики качества</div>
         ${metricBar('SEO-рейтинг', d.seo_score||85, 100, 'var(--accent-l)')}
@@ -859,7 +871,7 @@ async function analyzeKeywords() {
   document.getElementById('kw-statuses').innerHTML = '';
   setProgress(0, 'Получаем данные с Wildberries…');
 
-  document.getElementById('kw-result-area').innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">Анализируем артикулы…</div></div>`;
+  document.getElementById('kw-result-area').innerHTML = `<div class="loading-box"><div class="spinner"></div><div class="loading-text">ИИ анализирует ключевые слова…</div></div>`;
 
   try {
     setProgress(20, 'Запрашиваем данные с Wildberries…');
@@ -970,7 +982,70 @@ function copySelected() {
   const sel = kwData.filter(k=>k.checked).map(k=>k.word).join(', ');
   if (!sel) return;
   copyText(sel, document.getElementById('kw-copy-btn'));
+
+// ── History ───────────────────────────────────────────
+async function loadHistory() {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Загрузка…</div>';
+  try {
+    const r = await fetch(`${API}/history`, { headers: authHeaders() });
+    const items = await r.json();
+    if (!items.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">История пуста</div><div class="empty-sub">Сгенерируйте первое описание</div></div>'; return; }
+    list.innerHTML = items.map(item => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px">${item.product_name}</div>
+            <div style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">${item.category} · ${item.char_count} симв. · SEO ${item.seo_score}% · ${new Date(item.created_at).toLocaleString('ru')}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="copy-btn" onclick="copyText(document.getElementById('hist-${item.id}').textContent)">⎘ Копировать</button>
+            <button onclick="deleteHistory(${item.id})" style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:6px;color:#f87171;padding:5px 10px;cursor:pointer;font-size:11px;font-family:'IBM Plex Mono',monospace">Удалить</button>
+          </div>
+        </div>
+        <div id="hist-${item.id}" style="font-size:13px;line-height:1.7;color:var(--text-sub);white-space:pre-wrap;max-height:120px;overflow:hidden;position:relative">${item.description}</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <span style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">${item.meta_keywords}</span>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div style="color:var(--error-text);font-size:13px">Ошибка загрузки</div>'; }
+}
+
+async function deleteHistory(id) {
+  if (!confirm('Удалить запись?')) return;
+  await fetch(`${API}/history/${id}`, { method:'DELETE', headers:authHeaders() });
+  loadHistory();
+}
+
+// ── Logs ──────────────────────────────────────────────
+async function loadLogs() {
+  const list = document.getElementById('logs-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Загрузка…</div>';
+  try {
+    const r = await fetch(`${API}/admin/logs`, { headers: authHeaders() });
+    const logs = await r.json();
+    if (!logs.length) { list.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Логов нет</div>'; return; }
+    list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;font-family:'IBM Plex Mono',monospace">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Время</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Пользователь</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Эндпоинт</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Статус</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Время, мс</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--text-muted)">Детали</th>
+      </tr></thead>
+      <tbody>${logs.map(l => `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 12px;color:var(--text-dim)">${new Date(l.created_at).toLocaleString('ru')}</td>
+        <td style="padding:8px 12px;color:var(--text)">${l.username||'—'}</td>
+        <td style="padding:8px 12px;color:var(--accent-l)">${l.endpoint}</td>
+        <td style="padding:8px 12px;color:${l.status==='success'?'#34d399':'#f87171'}">${l.status}</td>
+        <td style="padding:8px 12px;color:var(--text-sub)">${l.duration_ms}</td>
+        <td style="padding:8px 12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.detail||'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch { list.innerHTML = '<div style="color:var(--error-text);font-size:13px">Ошибка загрузки</div>'; }
+}
 }
 </script>
-</body>
-</html>

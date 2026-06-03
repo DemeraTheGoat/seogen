@@ -3,7 +3,9 @@ import json
 import httpx
 import hashlib
 import secrets
+import time
 from datetime import datetime, timedelta
+from collections import defaultdict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,9 +25,22 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
+# ── Rate limiter (in-memory) ──────────────────────────────────────────────────
+rate_store = defaultdict(list)  # user_id -> [timestamps]
+RATE_LIMIT  = 10   # requests
+RATE_WINDOW = 60   # seconds
+
+def check_rate_limit(user_id: int):
+    now = time.time()
+    timestamps = rate_store[user_id]
+    # clean old
+    rate_store[user_id] = [t for t in timestamps if now - t < RATE_WINDOW]
+    if len(rate_store[user_id]) >= RATE_LIMIT:
+        raise HTTPException(status_code=429, detail=f"Слишком много запросов. Подождите немного и попробуйте снова.")
+    rate_store[user_id].append(now)
+
 # ── Database ──────────────────────────────────────────────────────────────────
 import asyncpg
-
 db_pool = None
 
 async def get_db():
@@ -64,6 +79,33 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS generations (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                product_name VARCHAR(500),
+                category VARCHAR(200),
+                platform VARCHAR(100),
+                description TEXT,
+                meta_keywords TEXT,
+                meta_description TEXT,
+                seo_score INTEGER,
+                char_count INTEGER,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS logs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                username VARCHAR(100),
+                endpoint VARCHAR(100),
+                status VARCHAR(20),
+                duration_ms INTEGER,
+                detail TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
         existing = await conn.fetchrow("SELECT id FROM users WHERE username = 'admin'")
         if not existing:
             pwd_hash = hashlib.sha256("admin123".encode()).hexdigest()
@@ -71,28 +113,39 @@ async def init_db():
                 "INSERT INTO users (username, password_hash, is_admin) VALUES ($1, $2, $3)",
                 "admin", pwd_hash, True
             )
-            print("✓ Admin created: admin / admin123")
 
 @app.on_event("startup")
 async def startup():
     await init_db()
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Log helper ────────────────────────────────────────────────────────────────
+async def write_log(user_id, username, endpoint, status, duration_ms, detail=""):
+    try:
+        pool = await get_db()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO logs (user_id, username, endpoint, status, duration_ms, detail) VALUES ($1,$2,$3,$4,$5,$6)",
+                user_id, username, endpoint, status, duration_ms, detail[:500]
+            )
+    except:
+        pass
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
 def hash_password(p): return hashlib.sha256(p.encode()).hexdigest()
 
-async def create_session(user_id: int) -> str:
+async def create_session(user_id):
     token = secrets.token_hex(32)
     expires = datetime.utcnow() + timedelta(days=30)
     pool = await get_db()
     async with pool.acquire() as conn:
         await conn.execute(
-            "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)",
+            "INSERT INTO sessions (token, user_id, expires_at) VALUES ($1,$2,$3)",
             token, user_id, expires
         )
     return token
 
 async def get_current_user(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = request.headers.get("Authorization","").replace("Bearer ","")
     if not token:
         raise HTTPException(status_code=401, detail="Не авторизован")
     pool = await get_db()
@@ -100,7 +153,7 @@ async def get_current_user(request: Request):
         row = await conn.fetchrow("""
             SELECT u.id, u.username, u.is_admin
             FROM sessions s JOIN users u ON s.user_id = u.id
-            WHERE s.token = $1 AND s.expires_at > NOW()
+            WHERE s.token=$1 AND s.expires_at > NOW()
         """, token)
     if not row:
         raise HTTPException(status_code=401, detail="Сессия истекла")
@@ -112,7 +165,7 @@ async def require_admin(request: Request):
         raise HTTPException(status_code=403, detail="Только для администратора")
     return user
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
+# ── Auth routes ───────────────────────────────────────────────────────────────
 @app.post("/auth/login")
 async def login(request: Request):
     data = await request.json()
@@ -182,7 +235,7 @@ async def change_password(request: Request):
     if not old_password or not new_password:
         raise HTTPException(status_code=400, detail="Заполните все поля")
     if len(new_password) < 6:
-        raise HTTPException(status_code=400, detail="Новый пароль минимум 6 символов")
+        raise HTTPException(status_code=400, detail="Пароль минимум 6 символов")
     pool = await get_db()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -191,10 +244,7 @@ async def change_password(request: Request):
         )
         if not row:
             raise HTTPException(status_code=400, detail="Неверный текущий пароль")
-        await conn.execute(
-            "UPDATE users SET password_hash=$1 WHERE id=$2",
-            hash_password(new_password), user["id"]
-        )
+        await conn.execute("UPDATE users SET password_hash=$1 WHERE id=$2", hash_password(new_password), user["id"])
     return {"ok": True}
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -240,10 +290,8 @@ async def list_invites(request: Request):
     pool = await get_db()
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT i.id, i.code, i.created_at, i.expires_at,
-                   u.username as used_by_username
-            FROM invite_codes i
-            LEFT JOIN users u ON i.used_by = u.id
+            SELECT i.id, i.code, i.created_at, i.expires_at, u.username as used_by_username
+            FROM invite_codes i LEFT JOIN users u ON i.used_by = u.id
             ORDER BY i.created_at DESC
         """)
     return [dict(r) for r in rows]
@@ -252,7 +300,7 @@ async def list_invites(request: Request):
 async def create_invite(request: Request):
     admin = await require_admin(request)
     data = await request.json()
-    days = data.get("days")  # None = бессрочный
+    days = data.get("days")
     code = secrets.token_hex(8).upper()
     expires = datetime.utcnow() + timedelta(days=days) if days else None
     pool = await get_db()
@@ -271,6 +319,38 @@ async def delete_invite(invite_id: int, request: Request):
         await conn.execute("DELETE FROM invite_codes WHERE id=$1", invite_id)
     return {"ok": True}
 
+@app.get("/admin/logs")
+async def get_logs(request: Request):
+    await require_admin(request)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT id, username, endpoint, status, duration_ms, detail, created_at
+            FROM logs ORDER BY created_at DESC LIMIT 200
+        """)
+    return [dict(r) for r in rows]
+
+# ── History ───────────────────────────────────────────────────────────────────
+@app.get("/history")
+async def get_history(request: Request):
+    user = await get_current_user(request)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT id, product_name, category, platform, description,
+                   meta_keywords, meta_description, seo_score, char_count, created_at
+            FROM generations WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50
+        """, user["id"])
+    return [dict(r) for r in rows]
+
+@app.delete("/history/{gen_id}")
+async def delete_generation(gen_id: int, request: Request):
+    user = await get_current_user(request)
+    pool = await get_db()
+    async with pool.acquire() as conn:
+        await conn.execute("DELETE FROM generations WHERE id=$1 AND user_id=$2", gen_id, user["id"])
+    return {"ok": True}
+
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
@@ -279,7 +359,7 @@ async def health():
 # ── Yandex GPT ────────────────────────────────────────────────────────────────
 async def ask_yandex(system_text, user_text, temperature=0.5, max_tokens=2000):
     if not YANDEX_API_KEY or not YANDEX_FOLDER_ID:
-        raise HTTPException(status_code=500, detail="Yandex API credentials не настроены")
+        raise HTTPException(status_code=500, detail="AI credentials не настроены")
     headers = {"Authorization": f"Api-Key {YANDEX_API_KEY}", "Content-Type": "application/json"}
     body = {
         "modelUri": MODEL_URI,
@@ -289,11 +369,57 @@ async def ask_yandex(system_text, user_text, temperature=0.5, max_tokens=2000):
     async with httpx.AsyncClient(timeout=90) as client:
         resp = await client.post(YANDEX_URL, headers=headers, json=body)
     if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=f"Yandex GPT ошибка: {resp.text}")
+        raise HTTPException(status_code=resp.status_code, detail=f"Ошибка AI: {resp.text}")
     return resp.json()["result"]["alternatives"][0]["message"]["text"]
 
 def clean_json(raw):
     return json.loads(raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip())
+
+# ── WB verification ───────────────────────────────────────────────────────────
+WB_BANNED_WORDS = [
+    "гарантия", "скидка", "бесплатно", "акция", "распродажа",
+    "официальный", "оригинал", "подарок", "хит", "новинка",
+    "эксклюзив", "уникальный", "революционный"
+]
+
+def verify_description(text: str, target_chars: int) -> dict:
+    issues = []
+    warnings = []
+
+    # Length check
+    length = len(text)
+    if length > 5000:
+        issues.append(f"Описание слишком длинное: {length} символов (макс. 5000)")
+    elif abs(length - target_chars) > 100:
+        warnings.append(f"Длина {length} символов отличается от заданной {target_chars}")
+
+    # Banned words
+    text_lower = text.lower()
+    found_banned = [w for w in WB_BANNED_WORDS if w in text_lower]
+    if found_banned:
+        issues.append(f"Запрещённые слова WB: {', '.join(found_banned)}")
+
+    # Contacts
+    import re
+    if re.search(r'\b\d{10,11}\b|\+7|\bwww\b|\.ru\b|@', text):
+        issues.append("Обнаружены контактные данные (телефон, сайт, email)")
+
+    # CAPS LOCK words (3+ letters)
+    caps_words = re.findall(r'\b[А-ЯA-Z]{3,}\b', text)
+    if len(caps_words) > 2:
+        warnings.append(f"Много слов заглавными буквами: {', '.join(caps_words[:3])}")
+
+    # Emoji
+    emoji_pattern = re.compile("[\U00010000-\U0010ffff]", flags=re.UNICODE)
+    if emoji_pattern.search(text):
+        issues.append("Обнаружены эмодзи — WB их не отображает")
+
+    return {
+        "passed": len(issues) == 0,
+        "issues": issues,
+        "warnings": warnings,
+        "length": length,
+    }
 
 # ── WB card ───────────────────────────────────────────────────────────────────
 async def fetch_wb_card(art):
@@ -301,7 +427,7 @@ async def fetch_wb_card(art):
         url = f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm={art}"
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        p = r.json().get("data", {}).get("products", [None])[0]
+        p = r.json().get("data",{}).get("products",[None])[0]
         if not p: return None
         return {
             "title": p.get("name",""), "brand": p.get("brand",""),
@@ -314,7 +440,10 @@ async def fetch_wb_card(art):
 # ── Generate ──────────────────────────────────────────────────────────────────
 @app.post("/generate")
 async def generate_description(request: Request):
-    await get_current_user(request)
+    start = time.time()
+    user = await get_current_user(request)
+    check_rate_limit(user["id"])
+
     req = await request.json()
     name=req.get("name",""); category=req.get("category","")
     material=req.get("material",""); probe=req.get("probe","")
@@ -323,7 +452,9 @@ async def generate_description(request: Request):
     insert_cut=req.get("insert_cut",""); features=req.get("features","")
     keywords=req.get("keywords",""); example_desc=req.get("example_desc","")
     char_count=int(req.get("char_count",700))
-    if not name: raise HTTPException(status_code=400, detail="Укажите название товара")
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Укажите название товара")
 
     example_block = f'\nПРИМЕР ОПИСАНИЯ КОНКУРЕНТА:\n"""\n{example_desc.strip()[:1000]}\n"""\n' if example_desc.strip() else ""
     insert_parts = [p for p in [insert_stone if insert_stone not in ("","Без вставки") else "", insert_weight, f"огранка: {insert_cut}" if insert_cut else ""] if p]
@@ -332,41 +463,83 @@ async def generate_description(request: Request):
 
     system = f"""Ты — копирайтер для маркетплейса Wildberries. Пишешь описания ювелирных украшений.
 Правила: только русский язык, живой профессиональный стиль, без канцелярита.
-Не используй: лучший, идеальный, топ, элитный. Без эмодзи и маркированных списков.
+Не используй: лучший, идеальный, топ, элитный, гарантия, скидка, бесплатно.
+Без эмодзи и маркированных списков. Не добавляй контактные данные.
 Органично включай ключевые слова в разных словоформах.
 Структура: сильное первое предложение → описание → материал и вставки → кому подходит → завершение с ключами.
-КРИТИЧЕСКИ ВАЖНО: описание должно быть ровно {char_count} символов (±30). Считай символы.
+КРИТИЧЕСКИ ВАЖНО: описание должно быть ровно {char_count} символов (±30).
 Отвечай строго JSON без markdown: {{"description":"...","meta_keywords":"...","meta_description":"...","seo_score":85,"uniqueness":90,"keyword_density":3.0}}"""
 
-    user = f"""Название: {name}\nКатегория: {category}\nМатериал: {material_full or 'не указан'}\nЦвет: {color or 'не указан'}\nПокрытие: {coating or 'без покрытия'}\nВставка: {insert_str}\nОсобенности: {features or 'не указаны'}\nКлючевые слова: {keywords or 'сгенерируй на основе названия'}\nДлина: ровно {char_count} символов (±30)\n{example_block}\nОтвет — строго JSON."""
+    user_prompt = f"""Название: {name}
+Категория: {category}
+Материал: {material_full or 'не указан'}
+Цвет: {color or 'не указан'}
+Покрытие: {coating or 'без покрытия'}
+Вставка: {insert_str}
+Особенности: {features or 'не указаны'}
+Ключевые слова: {keywords or 'сгенерируй на основе названия'}
+Длина: ровно {char_count} символов (±30)
+{example_block}
+Ответ — строго JSON."""
 
-    raw = await ask_yandex(system, user, temperature=0.5, max_tokens=3000)
-    try: result = clean_json(raw)
-    except: raise HTTPException(status_code=422, detail=f"Ошибка парсинга: {raw[:300]}")
+    try:
+        raw = await ask_yandex(system, user_prompt, temperature=0.5, max_tokens=3000)
+        result = clean_json(raw)
 
-    desc = result.get("description","")
-    if abs(len(desc) - char_count) > 50:
-        diff = char_count - len(desc)
-        action = "расширь" if diff > 0 else "сократи"
+        # Коррекция длины
+        desc = result.get("description","")
+        if abs(len(desc) - char_count) > 50:
+            diff = char_count - len(desc)
+            action = "расширь" if diff > 0 else "сократи"
+            try:
+                corrected = await ask_yandex(
+                    "Ты — редактор. Корректируешь длину текста.",
+                    f"Текст ({len(desc)} символов):\n\"\"\"{desc}\"\"\"\n\n{action} до {char_count} символов (±30). Верни только текст.",
+                    temperature=0.3, max_tokens=3000
+                )
+                corrected = corrected.strip().strip('"')
+                if abs(len(corrected) - char_count) < abs(len(desc) - char_count):
+                    result["description"] = corrected
+                    desc = corrected
+            except: pass
+
+        # Верификация
+        result["verification"] = verify_description(desc, char_count)
+
+        # Сохраняем в историю
         try:
-            corrected = await ask_yandex(
-                "Ты — редактор. Корректируешь длину текста.",
-                f"Текст ({len(desc)} символов):\n\"\"\"{desc}\"\"\"\n\n{action} до {char_count} символов (±30). Верни только текст.",
-                temperature=0.3, max_tokens=3000
-            )
-            corrected = corrected.strip().strip('"')
-            if abs(len(corrected) - char_count) < abs(len(desc) - char_count):
-                result["description"] = corrected
+            pool = await get_db()
+            async with pool.acquire() as conn:
+                await conn.execute("""
+                    INSERT INTO generations (user_id, product_name, category, platform, description,
+                        meta_keywords, meta_description, seo_score, char_count)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                """, user["id"], name, category, "Wildberries",
+                    result.get("description",""), result.get("meta_keywords",""),
+                    result.get("meta_description",""), result.get("seo_score",0), char_count)
         except: pass
-    return result
+
+        duration = int((time.time() - start) * 1000)
+        await write_log(user["id"], user["username"], "/generate", "success", duration, name)
+        return result
+
+    except HTTPException as e:
+        duration = int((time.time() - start) * 1000)
+        await write_log(user["id"], user["username"], "/generate", "error", duration, e.detail)
+        raise
 
 # ── Keywords ──────────────────────────────────────────────────────────────────
 @app.post("/keywords")
 async def extract_keywords(request: Request):
-    await get_current_user(request)
+    start = time.time()
+    user = await get_current_user(request)
+    check_rate_limit(user["id"])
+
     req = await request.json()
     articuls = req.get("articuls",[])[:30]
-    if not articuls: raise HTTPException(status_code=400, detail="Список артикулов пуст")
+    if not articuls:
+        raise HTTPException(status_code=400, detail="Список артикулов пуст")
+
     results = []
     for art in articuls:
         card = await fetch_wb_card(str(art))
@@ -382,4 +555,7 @@ async def extract_keywords(request: Request):
             results.append({"artId":art,"title":parsed.get("title",str(art)),"keywords":parsed.get("keywords",[]),"real":is_real})
         except:
             results.append({"artId":art,"title":str(art),"keywords":[],"real":False,"error":raw[:200]})
+
+    duration = int((time.time() - start) * 1000)
+    await write_log(user["id"], user["username"], "/keywords", "success", duration, f"{len(articuls)} артикулов")
     return {"results": results}

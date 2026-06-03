@@ -982,6 +982,7 @@ function copySelected() {
   const sel = kwData.filter(k=>k.checked).map(k=>k.word).join(', ');
   if (!sel) return;
   copyText(sel, document.getElementById('kw-copy-btn'));
+}
 
 // ── History ───────────────────────────────────────────
 async function loadHistory() {
@@ -1046,6 +1047,5 @@ async function loadLogs() {
       </tr>`).join('')}</tbody>
     </table>`;
   } catch { list.innerHTML = '<div style="color:var(--error-text);font-size:13px">Ошибка загрузки</div>'; }
-}
 }
 </script>

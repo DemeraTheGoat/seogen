@@ -767,6 +767,41 @@
       <div id="users-list"></div>
     </div>
   </div>
+
+  <!-- Инвайт-коды -->
+  <div style="margin-top:32px">
+    <div class="section-title" style="font-size:20px;margin-bottom:4px">Инвайт-коды</div>
+    <div class="section-sub" style="margin-bottom:18px">Генерируйте коды для регистрации новых пользователей</div>
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start">
+      <div class="card">
+        <div class="card-label">Новый код</div>
+        <div class="field">
+          <label class="field-label">Срок действия</label>
+          <select id="invite-days">
+            <option value="">Бессрочный</option>
+            <option value="1">1 день</option>
+            <option value="7">7 дней</option>
+            <option value="30">30 дней</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="createInvite()">+ Сгенерировать код</button>
+        <div id="new-invite-result" style="margin-top:14px;display:none">
+          <div class="card-label">НОВЫЙ КОД — скопируй и отправь пользователю</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <code id="new-invite-code" style="flex:1;background:var(--meta-bg);border:0.5px solid var(--accent-border);border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--accent-l);letter-spacing:0.1em"></code>
+            <button class="copy-btn" onclick="copyInviteCode()">⎘ Копировать</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:13px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">История кодов</div>
+          <button class="btn-sm" onclick="loadInvites()">↻ Обновить</button>
+        </div>
+        <div id="invites-list"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- HISTORY TAB -->

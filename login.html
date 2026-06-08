@@ -3,39 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Generator — Вход</title>
+<title>SEOKiller — Вход</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#060d1a;color:#e2e8f0;font-family:'IBM Plex Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
-  .card{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:40px 36px;width:100%;max-width:420px}
-  .logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
-  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#38bdf8,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0}
-  .logo h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-0.02em}
-  .logo p{font-size:11px;color:#64748b;font-family:'IBM Plex Mono',monospace}
-  .tabs{display:flex;background:#060d1a;border-radius:8px;padding:3px;border:1px solid #1e293b;margin-bottom:24px}
-  .tab{flex:1;padding:8px;border:none;background:transparent;color:#64748b;font-size:13px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;border-radius:6px;transition:all .15s}
-  .tab.active{background:#1e293b;color:#e2e8f0;font-weight:500}
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-family:'IBM Plex Mono',monospace;margin-bottom:6px}
-  .field input{width:100%;background:#060d1a;border:1px solid #1e293b;border-radius:8px;color:#e2e8f0;padding:12px 14px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s}
-  .field input:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,0.12)}
-  .invite-hint{font-size:12px;color:#475569;font-family:'IBM Plex Mono',monospace;margin-top:5px}
-  .btn{width:100%;background:#0ea5e9;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .2s;margin-top:6px}
-  .btn:hover:not(:disabled){filter:brightness(1.15);transform:translateY(-1px)}
-  .btn:disabled{background:#1e293b;color:#64748b;cursor:not-allowed;transform:none}
-  .error{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#fca5a5;display:none}
-  .success{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#6ee7b7;display:none}
-  .footer{text-align:center;margin-top:20px;font-size:11px;color:#334155;font-family:'IBM Plex Mono',monospace}
+  body {
+    background:#18181c; color:#e8e8e8;
+    font-family:'Montserrat',sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  body::before {
+    content:''; position:fixed; width:500px; height:500px; border-radius:50%;
+    background:radial-gradient(circle,rgba(120,80,220,0.25) 0%,transparent 70%);
+    top:-150px; right:-100px; pointer-events:none;
+  }
+  body::after {
+    content:''; position:fixed; width:350px; height:350px; border-radius:50%;
+    background:radial-gradient(circle,rgba(80,40,160,0.15) 0%,transparent 70%);
+    bottom:-100px; left:-80px; pointer-events:none;
+  }
+  .card {
+    background:rgba(255,255,255,0.03); border:0.5px solid rgba(255,255,255,0.08);
+    border-radius:18px; padding:40px 36px; width:100%; max-width:420px;
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    position:relative; z-index:1;
+  }
+  .logo { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+  .logo-icon {
+    width:38px; height:38px; border-radius:9px;
+    background:rgba(140,90,255,0.15); border:0.5px solid rgba(140,90,255,0.35);
+    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+  }
+  .logo-name { font-size:20px; font-weight:800; letter-spacing:-0.03em; color:#e8e8e8; }
+  .logo-name span { color:#a78bfa; }
+  .logo-sub { font-size:10px; color:rgba(255,255,255,0.3); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+  .tabs {
+    display:flex; background:rgba(255,255,255,0.03); border-radius:8px;
+    padding:3px; border:0.5px solid rgba(255,255,255,0.07); margin-bottom:24px;
+  }
+  .tab {
+    flex:1; padding:8px; border:none; background:transparent;
+    color:rgba(255,255,255,0.3); font-size:12px; font-family:'Montserrat',sans-serif;
+    cursor:pointer; border-radius:6px; transition:all .15s; font-weight:500;
+  }
+  .tab.active {
+    background:rgba(140,90,255,0.12); border:0.5px solid rgba(140,90,255,0.3);
+    color:#a78bfa;
+  }
+  .field { margin-bottom:13px; }
+  .field label {
+    display:block; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:rgba(255,255,255,0.28); font-family:'IBM Plex Mono',monospace; margin-bottom:5px;
+  }
+  .field input {
+    width:100%; background:rgba(255,255,255,0.04);
+    border:0.5px solid rgba(255,255,255,0.08);
+    border-radius:8px; color:#e8e8e8; padding:11px 13px; font-size:13px;
+    font-family:'Montserrat',sans-serif; outline:none; transition:border-color .15s,box-shadow .15s;
+  }
+  .field input:focus { border-color:#a78bfa; box-shadow:0 0 0 2px rgba(140,90,255,0.12); }
+  .invite-hint { font-size:11px; color:rgba(255,255,255,0.2); font-family:'IBM Plex Mono',monospace; margin-top:5px; }
+  .btn {
+    width:100%; background:rgba(140,90,255,0.15);
+    border:0.5px solid rgba(140,90,255,0.35);
+    border-radius:10px; color:#a78bfa; padding:13px; font-size:13px;
+    font-weight:700; cursor:pointer; font-family:'Montserrat',sans-serif;
+    transition:all .2s; margin-top:6px;
+  }
+  .btn:hover:not(:disabled) { background:rgba(140,90,255,0.25); transform:translateY(-1px); box-shadow:0 6px 20px rgba(140,90,255,0.2); }
+  .btn:disabled { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.2); cursor:not-allowed; transform:none; }
+  .error {
+    background:rgba(239,68,68,0.07); border:0.5px solid rgba(239,68,68,0.25);
+    border-radius:8px; padding:10px 13px; margin-bottom:13px;
+    font-size:12px; color:#fca5a5; display:none;
+  }
+  .success {
+    background:rgba(52,211,153,0.07); border:0.5px solid rgba(52,211,153,0.2);
+    border-radius:8px; padding:10px 13px; margin-bottom:13px;
+    font-size:12px; color:#34d399; display:none;
+  }
+  .footer { text-align:center; margin-top:20px; font-size:10px; color:rgba(255,255,255,0.15); font-family:'IBM Plex Mono',monospace; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="logo">
-    <div class="logo-icon">✦</div>
+    <div class="logo-icon">⚡</div>
     <div>
-      <h1>SEO Generator</h1>
-      <p>Ювелирные украшения · Wildberries</p>
+      <div class="logo-name">SEO<span>Killer</span></div>
+      <div class="logo-sub">Ювелирные украшения</div>
     </div>
   </div>
 
@@ -44,7 +101,6 @@
     <button class="tab" onclick="switchTab('register',this)">Регистрация</button>
   </div>
 
-  <!-- LOGIN -->
   <div id="panel-login">
     <div class="error" id="login-error"></div>
     <div class="field"><label>Логин</label><input id="login-username" type="text" placeholder="Введите логин" autocomplete="username"></div>
@@ -52,7 +108,6 @@
     <button class="btn" id="login-btn" onclick="login()">Войти</button>
   </div>
 
-  <!-- REGISTER -->
   <div id="panel-register" style="display:none">
     <div class="error" id="reg-error"></div>
     <div class="success" id="reg-success"></div>
@@ -85,7 +140,12 @@ function switchTab(tab, btn) {
   document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Enter') { if (document.getElementById('panel-login').style.display !== 'none') login(); else register(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('panel-login').style.display !== 'none') login();
+    else register();
+  }
+});
 
 async function login() {
   const username = document.getElementById('login-username').value.trim();

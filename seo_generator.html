@@ -117,6 +117,13 @@
     flex-wrap: wrap;
   }
   .light .header { background: rgba(240,235,224,0.75); }
+  .light .hdr-btn { color: #2d1f6e; border-color: rgba(110,60,210,0.2); }
+  .light .hdr-btn:hover { color: #6d3fd6; border-color: rgba(110,60,210,0.4); }
+  .light .hdr-btn.danger { color: #991b1b; border-color: rgba(185,28,28,0.3); }
+  .light .user-chip { color: #2d1f6e; }
+  .light .tab-btn { color: rgba(20,10,50,0.4); }
+  .light .tab-btn.active { color: var(--accent-l); }
+  .light .plat-badge { color: var(--accent-l); }
 
   .logo-icon {
     width: 32px; height: 32px; border-radius: 8px;
@@ -221,6 +228,22 @@
     padding: 10px 13px; font-size: 13px;
     font-family: 'Montserrat', sans-serif;
     outline: none; transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  select option {
+    background: #1e1e24;
+    color: #e8e8e8;
+  }
+  .light select option {
+    background: #ede8de;
+    color: #1a1035;
   }
   input:focus, textarea:focus, select:focus {
     border-color: var(--accent-l);

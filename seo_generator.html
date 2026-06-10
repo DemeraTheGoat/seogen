@@ -117,13 +117,14 @@
     flex-wrap: wrap;
   }
   .light .header { background: rgba(240,235,224,0.75); }
-  .light .hdr-btn { color: #2d1f6e; border-color: rgba(110,60,210,0.2); }
-  .light .hdr-btn:hover { color: #6d3fd6; border-color: rgba(110,60,210,0.4); }
-  .light .hdr-btn.danger { color: #991b1b; border-color: rgba(185,28,28,0.3); }
-  .light .user-chip { color: #2d1f6e; }
-  .light .tab-btn { color: rgba(20,10,50,0.4); }
-  .light .tab-btn.active { color: var(--accent-l); }
-  .light .plat-badge { color: var(--accent-l); }
+  .light .hdr-btn { color: #2d1f6e !important; border-color: rgba(110,60,210,0.2) !important; background: rgba(110,60,210,0.06) !important; }
+  .light .hdr-btn:hover { color: #6d3fd6 !important; border-color: rgba(110,60,210,0.4) !important; }
+  .light .hdr-btn.danger { color: #991b1b !important; border-color: rgba(185,28,28,0.3) !important; background: rgba(185,28,28,0.05) !important; }
+  .light .user-chip { color: #2d1f6e !important; }
+  .light .user-chip span { color: #2d1f6e !important; }
+  .light .tab-btn { color: rgba(20,10,50,0.4) !important; }
+  .light .tab-btn.active { color: var(--accent-l) !important; background: var(--tab-active) !important; }
+  .light .plat-badge { color: var(--accent-l) !important; }
 
   .logo-icon {
     width: 32px; height: 32px; border-radius: 8px;
@@ -237,11 +238,11 @@
     background-position: right 12px center;
     padding-right: 32px;
   }
-  select option {
+  select option, select optgroup {
     background: #1e1e24;
     color: #e8e8e8;
   }
-  .light select option {
+  .light select option, .light select optgroup {
     background: #ede8de;
     color: #1a1035;
   }
@@ -621,31 +622,28 @@
         <label>Вставка <span class="opt">(необязательно)</span></label>
         <select id="g-insert" onchange="onInsertChange()">
           <option value="">— без вставки —</option>
-          <optgroup label="Драгоценные камни">
-            <option value="Бриллиант">Бриллиант</option>
-            <option value="Сапфир">Сапфир</option>
-            <option value="Рубин">Рубин</option>
-            <option value="Изумруд">Изумруд</option>
-            <option value="Александрит">Александрит</option>
-            <option value="Жемчуг">Жемчуг</option>
-          </optgroup>
-          <optgroup label="Полудрагоценные">
-            <option value="Аметист">Аметист</option>
-            <option value="Топаз">Топаз</option>
-            <option value="Цитрин">Цитрин</option>
-            <option value="Гранат">Гранат</option>
-            <option value="Перидот">Перидот</option>
-            <option value="Опал">Опал</option>
-            <option value="Турмалин">Турмалин</option>
-            <option value="Аквамарин">Аквамарин</option>
-          </optgroup>
-          <optgroup label="Синтетические / Другие">
-            <option value="Фианит">Фианит (CZ)</option>
-            <option value="Муассанит">Муассанит</option>
-            <option value="Шпинель синтетическая">Синтетическая шпинель</option>
-            <option value="Эмаль">Эмаль</option>
-            <option value="Без вставки">Без вставки (гладкое)</option>
-          </optgroup>
+          <option value="" disabled style="color:var(--text-dim);font-size:10px">── Драгоценные ──</option>
+          <option value="Бриллиант">Бриллиант</option>
+          <option value="Сапфир">Сапфир</option>
+          <option value="Рубин">Рубин</option>
+          <option value="Изумруд">Изумруд</option>
+          <option value="Александрит">Александрит</option>
+          <option value="Жемчуг">Жемчуг</option>
+          <option value="" disabled style="color:var(--text-dim);font-size:10px">── Полудрагоценные ──</option>
+          <option value="Аметист">Аметист</option>
+          <option value="Топаз">Топаз</option>
+          <option value="Цитрин">Цитрин</option>
+          <option value="Гранат">Гранат</option>
+          <option value="Перидот">Перидот</option>
+          <option value="Опал">Опал</option>
+          <option value="Турмалин">Турмалин</option>
+          <option value="Аквамарин">Аквамарин</option>
+          <option value="" disabled style="color:var(--text-dim);font-size:10px">── Синтетические ──</option>
+          <option value="Фианит">Фианит (CZ)</option>
+          <option value="Муассанит">Муассанит</option>
+          <option value="Шпинель синтетическая">Синтетическая шпинель</option>
+          <option value="Эмаль">Эмаль</option>
+          <option value="Без вставки">Без вставки (гладкое)</option>
         </select>
       </div>
 

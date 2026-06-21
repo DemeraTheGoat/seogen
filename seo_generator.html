@@ -117,14 +117,12 @@
     flex-wrap: wrap;
   }
   .light .header { background: rgba(240,235,224,0.75); }
-  .light .light .hdr-btn { color: #2d1f6e !important; border-color: rgba(110,60,210,0.2) !important; background: rgba(110,60,210,0.06) !important; }
-  .light .hdr-btn:hover { color: #6d3fd6 !important; border-color: rgba(110,60,210,0.4) !important; }
-  .light .hdr-btn.danger { color: #991b1b !important; border-color: rgba(185,28,28,0.3) !important; background: rgba(185,28,28,0.05) !important; }
-  .light .user-chip { color: #2d1f6e !important; }
-  .light .user-chip span { color: #2d1f6e !important; }
-  .light .tab-btn { color: rgba(20,10,50,0.4) !important; }
-  .light .tab-btn.active { color: var(--accent-l) !important; background: var(--tab-active) !important; }
-  .light .plat-badge { color: var(--accent-l) !important; }
+  .light .hdr-btn.danger { color: #991b1b !important; border-color: rgba(185,28,28,0.25) !important; background: rgba(185,28,28,0.06) !important; }
+  .light .user-chip { color: var(--text-sub); }
+  .light .user-chip span { color: var(--text-sub); }
+  .light .tab-btn { color: rgba(20,10,50,0.4); }
+  .light .tab-btn.active { color: var(--accent-l); background: var(--tab-active); }
+  .light .plat-badge { color: var(--accent-l); }
 
   .logo-icon {
     width: 32px; height: 32px; border-radius: 8px;
@@ -159,15 +157,16 @@
   .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .hdr-btn {
     display: flex; align-items: center; gap: 5px;
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: 7px; color: var(--text-muted);
-    padding: 6px 11px; font-size: 11px;
+    background: var(--accent-bg); border: 0.5px solid var(--accent-border);
+    border-radius: 8px; color: var(--accent-l);
+    padding: 6px 12px; font-size: 11px;
     font-family: 'IBM Plex Mono', monospace; cursor: pointer;
     transition: all .2s;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   }
-  .hdr-btn:hover { border-color: var(--accent-border); color: var(--accent-l); }
-  .hdr-btn.danger { color: #f87171; border-color: rgba(248,113,113,0.2); }
-  .hdr-btn.danger:hover { border-color: rgba(248,113,113,0.4); }
+  .hdr-btn:hover { background: rgba(140,90,255,0.2); border-color: var(--accent-l); }
+  .hdr-btn.danger { background: rgba(248,113,113,0.08); color: #f87171; border-color: rgba(248,113,113,0.25); }
+  .hdr-btn.danger:hover { background: rgba(248,113,113,0.16); border-color: rgba(248,113,113,0.45); }
   .user-chip {
     font-size: 11px; color: var(--text-muted);
     font-family: 'IBM Plex Mono', monospace;
